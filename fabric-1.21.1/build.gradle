@@ -5,10 +5,6 @@ plugins {
 version = mod_version + '-fabric-1.21.1'
 group = maven_group
 
-loom {
-    accessWidenerPath = file('src/main/resources/despotes.accesswidener')
-}
-
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.officialMojangMappings()
@@ -34,6 +30,9 @@ tasks.withType(JavaCompile).configureEach {
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
+
+// Private Minecraft members are reached via MinecraftKeyAccess reflection (no access
+// widener), keeping the intermediary-mapped artifact loadable across namespaces.
 
 processResources {
     inputs.property 'version', mod_semver

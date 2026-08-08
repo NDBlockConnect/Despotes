@@ -123,4 +123,33 @@ public interface IGamePlatform {
     /** Draw a HUD overlay line batch (called on the render thread after GUI draw). */
     default void drawOverlay(java.util.List<String> lines) {
     }
+
+    /**
+     * Release the captured (grabbed) mouse cursor back to the OS desktop. Used so the game
+     * does not keep locking the user's mouse while the window is unfocused. No-op when the
+     * cursor is not captured.
+     */
+    default void releaseMouseCapture() {
+    }
+
+    /**
+     * Grab (capture) the mouse cursor for first-person camera control. No-op when a screen
+     * is open or no world is loaded.
+     */
+    default void grabMouseCapture() {
+    }
+
+    /** True when the game currently has the mouse cursor captured (grabbed). */
+    default boolean isMouseCaptured() {
+        return false;
+    }
+
+    /**
+     * Enable or disable the vanilla "pause the game when the window loses focus"
+     * behaviour. External control only works while the window is unfocused, so Despotes
+     * disables this by default (see {@code focus.preventPauseOnFocusLoss}). The setting is
+     * applied in memory only; implementations should not persist it to user options.
+     */
+    default void setPauseOnLostFocus(boolean enabled) {
+    }
 }

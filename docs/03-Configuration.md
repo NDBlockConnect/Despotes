@@ -58,6 +58,10 @@ Despotes reads **`despotes.json`** from the game directory (the directory that c
   },
   "movement": {
     "defaultLookSmoothTicks": 4
+  },
+  "focus": {
+    "releaseMouseOnFocusLoss": true,
+    "regrabMouseOnFocusGain": true
   }
 }
 ```
@@ -72,6 +76,15 @@ Plugin sources (v26.1+) add entries with `"transport": "plugin"` and a `"class"`
 { "id": "my-ws", "transport": "plugin", "class": "com.example.WsSourceFactory",
   "config": { "...transport specific..." }, "enabled": true }
 ```
+
+## 2.5 Focus & mouse capture
+
+Vanilla Minecraft never releases the captured mouse cursor when its window loses OS focus, so the game keeps locking the mouse even while you work elsewhere. Despotes fixes this:
+
+- `focus.releaseMouseOnFocusLoss` (default `true`) — whenever the game window loses OS focus, Despotes releases the captured cursor back to the desktop (only if it was captured).
+- `focus.regrabMouseOnFocusGain` (default `true`) — when focus returns, the cursor is automatically re-captured if it had been captured before the loss.
+
+Manual control is available at any time via the `mouse` action (doc 02 §2.8). Externally injected input never requires the window to be focused, and the user's OS mouse/keyboard are never touched.
 
 ## 3. Security notes
 

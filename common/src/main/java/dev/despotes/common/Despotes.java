@@ -3,6 +3,7 @@ package dev.despotes.common;
 import com.google.gson.JsonObject;
 import dev.despotes.common.config.DespotesConfig;
 import dev.despotes.common.dispatcher.Dispatcher;
+import dev.despotes.common.focus.FocusManager;
 import dev.despotes.common.platform.IGamePlatform;
 import dev.despotes.common.transport.CliTransport;
 import dev.despotes.common.transport.ControlTransport;
@@ -25,7 +26,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.0-Alpha.2";
+    public static final String VERSION = "v26.0-Alpha.3";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -33,6 +34,7 @@ public final class Despotes {
     private final IGamePlatform platform;
     private final DespotesConfig config;
     private final Dispatcher dispatcher;
+    private final FocusManager focusManager;
     private final OpLog opLog;
     private final Overlay overlay;
     private final List<ControlTransport> transports = new ArrayList<>();
@@ -42,6 +44,7 @@ public final class Despotes {
         this.platform = platform;
         this.config = config;
         this.configPath = configPath;
+        this.focusManager = new FocusManager(platform);
         this.opLog = new OpLog(config);
         this.overlay = new Overlay(config);
         this.dispatcher = new Dispatcher(this);
@@ -91,6 +94,7 @@ public final class Despotes {
 
     /** Called once per client tick on the client thread. */
     public void clientTick() {
+        focusManager.tick(config);
         dispatcher.tick();
     }
 
@@ -157,6 +161,7 @@ public final class Despotes {
             o.add("player", platform.player().statusJson());
         }
         o.addProperty("screenOpen", platform.screen() != null && platform.screen().open());
+        o.addProperty("mouseCaptured", platform.isMouseCaptured());
         o.addProperty("queueSize", dispatcher.queueSize());
         return o;
     }

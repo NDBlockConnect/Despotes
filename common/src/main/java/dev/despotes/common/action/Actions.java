@@ -43,6 +43,8 @@ public final class Actions {
                 return doClick(ctx, cmd);
             case "use":
                 return doUse(ctx, cmd);
+            case "mouse":
+                return doMouse(ctx, cmd);
             case "screenshot":
                 // Intercepted by the dispatcher (async capture path); defensive fallback.
                 throw ProtocolError.internal("screenshot must be routed through the async dispatcher path");
@@ -50,6 +52,8 @@ public final class Actions {
                 return doStatus(ctx);
             case "screen":
                 return doScreenQuery(ctx);
+            case "inventory":
+                return doInventoryQuery(ctx);
             case "pending":
                 return doPending(ctx);
             case "config-reload":
@@ -329,6 +333,34 @@ public final class Actions {
         return Result.ok(res);
     }
 
+    // ---- mouse capture ----
+
+    /**
+     * Explicitly grab or release the mouse cursor:
+     * {"type":"mouse","op":"grab"|"release"|"status"}.
+     */
+    private static Result doMouse(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        String op = Json.normalize(Json.getStr(cmd, "op", "status"));
+        switch (op) {
+            case "grab":
+                p.grabMouseCapture();
+                break;
+            case "release":
+                p.releaseMouseCapture();
+                break;
+            case "status":
+                break;
+            default:
+                throw ProtocolError.badRequest("unknown mouse 'op': " + op);
+        }
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "mouse");
+        res.addProperty("op", op);
+        res.addProperty("captured", p.isMouseCaptured());
+        return Result.ok(res);
+    }
+
     // ---- screenshot ----
 
     /**
@@ -411,6 +443,18 @@ public final class Actions {
             }
         }
         return b.length() == 0 ? "req" : b.toString();
+    }
+
+    // ---- inventory query ----
+
+    private static Result doInventoryQuery(ActionContext ctx) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        var player = p.player();
+        if (player == null) {
+            throw ProtocolError.notInGame();
+        }
+        return Result.ok(player.inventoryJson());
     }
 
     // ---- queries ----

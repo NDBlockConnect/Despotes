@@ -127,6 +127,19 @@ public final class FabricPlatform implements IGamePlatform {
             log("[Despotes] unknown key: " + keyName);
             return;
         }
+        Minecraft mc = Minecraft.getInstance();
+        Screen screen = mc.gui.screen();
+        if (screen != null && key.getType() != InputConstants.Type.MOUSE) {
+            // Route through the open screen so keys like ESC close menus.
+            net.minecraft.client.input.KeyEvent event =
+                    new net.minecraft.client.input.KeyEvent(key.getValue(), key.getValue(), 0);
+            if (pressed) {
+                screen.keyPressed(event);
+            } else {
+                screen.keyReleased(event);
+            }
+            return;
+        }
         if (pressed) {
             KeyMapping.set(key, true);
             KeyMapping.click(key);
@@ -141,13 +154,13 @@ public final class FabricPlatform implements IGamePlatform {
     public void setMovement(double forward, double left, boolean jump, boolean sneak, boolean sprint) {
         Minecraft mc = Minecraft.getInstance();
         var o = mc.options;
-        KeyMapping.set(o.keyUp.key, forward > 0);
-        KeyMapping.set(o.keyDown.key, forward < 0);
-        KeyMapping.set(o.keyLeft.key, left > 0);
-        KeyMapping.set(o.keyRight.key, left < 0);
-        KeyMapping.set(o.keyJump.key, jump);
-        KeyMapping.set(o.keyShift.key, sneak);
-        KeyMapping.set(o.keySprint.key, sprint);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyUp), forward > 0);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyDown), forward < 0);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyLeft), left > 0);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyRight), left < 0);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyJump), jump);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyShift), sneak);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keySprint), sprint);
     }
 
     // ---- view rotation ----
@@ -185,7 +198,10 @@ public final class FabricPlatform implements IGamePlatform {
         Minecraft mc = Minecraft.getInstance();
         Screen s = mc.gui.screen();
         if (s instanceof ChatScreen chat) {
-            chat.input.insertText(text);
+            EditBox box = MinecraftKeyAccess.chatInput(chat);
+            if (box != null) {
+                box.insertText(text);
+            }
             return;
         }
         if (s != null) {
@@ -268,7 +284,7 @@ public final class FabricPlatform implements IGamePlatform {
     public void worldDropItem(boolean stack) {
         Minecraft mc = Minecraft.getInstance();
         var o = mc.options;
-        KeyMapping.click(o.keyDrop.key);
+        KeyMapping.click(MinecraftKeyAccess.boundKey(o.keyDrop));
     }
 
     @Override
@@ -341,5 +357,35 @@ public final class FabricPlatform implements IGamePlatform {
     @Override
     public void drawOverlay(java.util.List<String> lines) {
         // Rendering is performed by HudOverlayMixin directly; kept as no-op hook.
+    }
+
+    // ---- mouse capture (focus-safe) ----
+
+    @Override
+    public void releaseMouseCapture() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.mouseHandler.isMouseGrabbed()) {
+            mc.mouseHandler.releaseMouse();
+        }
+    }
+
+    @Override
+    public void grabMouseCapture() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.gui.screen() != null || mc.level == null) {
+            return;
+        }
+        mc.mouseHandler.grabMouse();
+    }
+
+    @Override
+    public boolean isMouseCaptured() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc != null && mc.mouseHandler.isMouseGrabbed();
+    }
+
+    @Override
+    public void setPauseOnLostFocus(boolean enabled) {
+        Minecraft.getInstance().options.pauseOnLostFocus = enabled;
     }
 }

@@ -126,6 +126,17 @@ public final class LegacyFabricPlatform implements IGamePlatform {
             log("[Despotes] unknown key: " + keyName);
             return;
         }
+        Minecraft mc = Minecraft.getInstance();
+        Screen screen = mc.screen;
+        if (screen != null && key.getType() != InputConstants.Type.MOUSE) {
+            // Route through the open screen so keys like ESC close menus.
+            if (pressed) {
+                screen.keyPressed(key.getValue(), key.getValue(), 0);
+            } else {
+                screen.keyReleased(key.getValue(), key.getValue(), 0);
+            }
+            return;
+        }
         if (pressed) {
             KeyMapping.set(key, true);
             KeyMapping.click(key);
@@ -137,13 +148,13 @@ public final class LegacyFabricPlatform implements IGamePlatform {
     @Override
     public void setMovement(double forward, double left, boolean jump, boolean sneak, boolean sprint) {
         var o = Minecraft.getInstance().options;
-        KeyMapping.set(o.keyUp.key, forward > 0);
-        KeyMapping.set(o.keyDown.key, forward < 0);
-        KeyMapping.set(o.keyLeft.key, left > 0);
-        KeyMapping.set(o.keyRight.key, left < 0);
-        KeyMapping.set(o.keyJump.key, jump);
-        KeyMapping.set(o.keyShift.key, sneak);
-        KeyMapping.set(o.keySprint.key, sprint);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyUp), forward > 0);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyDown), forward < 0);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyLeft), left > 0);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyRight), left < 0);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyJump), jump);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keyShift), sneak);
+        KeyMapping.set(MinecraftKeyAccess.boundKey(o.keySprint), sprint);
     }
 
     @Override
@@ -177,7 +188,10 @@ public final class LegacyFabricPlatform implements IGamePlatform {
         Minecraft mc = Minecraft.getInstance();
         Screen s = mc.screen;
         if (s instanceof ChatScreen chat) {
-            chat.input.insertText(text);
+            EditBox box = MinecraftKeyAccess.chatInput(chat);
+            if (box != null) {
+                box.insertText(text);
+            }
             return;
         }
         if (s != null) {
@@ -253,13 +267,13 @@ public final class LegacyFabricPlatform implements IGamePlatform {
 
     @Override
     public void worldDropItem(boolean stack) {
-        KeyMapping.click(Minecraft.getInstance().options.keyDrop.key);
+        KeyMapping.click(MinecraftKeyAccess.boundKey(Minecraft.getInstance().options.keyDrop));
     }
 
     @Override
     public void worldPickBlock() {
         Minecraft mc = Minecraft.getInstance();
-        KeyMapping.click(mc.options.keyPickItem.key);
+        KeyMapping.click(MinecraftKeyAccess.boundKey(mc.options.keyPickItem));
     }
 
     @Override
@@ -278,5 +292,35 @@ public final class LegacyFabricPlatform implements IGamePlatform {
             log("[Despotes] capture failed: " + e.getMessage());
             done.accept(null);
         }
+    }
+
+    // ---- mouse capture (focus-safe) ----
+
+    @Override
+    public void releaseMouseCapture() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.mouseHandler.isMouseGrabbed()) {
+            mc.mouseHandler.releaseMouse();
+        }
+    }
+
+    @Override
+    public void grabMouseCapture() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen != null || mc.level == null) {
+            return;
+        }
+        mc.mouseHandler.grabMouse();
+    }
+
+    @Override
+    public boolean isMouseCaptured() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc != null && mc.mouseHandler.isMouseGrabbed();
+    }
+
+    @Override
+    public void setPauseOnLostFocus(boolean enabled) {
+        Minecraft.getInstance().options.pauseOnLostFocus = enabled;
     }
 }

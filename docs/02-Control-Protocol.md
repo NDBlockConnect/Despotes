@@ -95,11 +95,25 @@ Without `target`, `attack`/`useItem` act on whatever the crosshair is over.
 
 Returns `{ "width": w, "height": h, "format": "png", "base64": "..." }` or, with `save: true`, `{ "path": "<absolute path>" }`.
 
+### 2.8 `mouse` — mouse capture control
+
+```json
+{ "type": "mouse", "op": "grab" | "release" | "status" }
+```
+
+- `release` frees the captured cursor back to the OS desktop — use this when the game keeps the mouse locked while you are working in another window.
+- `grab` re-captures the cursor for first-person camera control (only takes effect in-world with no screen open).
+- `status` only reports the current state.
+
+Returns `{ "executed": "mouse", "op": "<op>", "captured": true|false }`.
+
+Note: independent of this command, Despotes automatically releases the mouse whenever the game window loses OS focus (see `focus.releaseMouseOnFocusLoss` in doc 03) and re-captures it on focus regain.
+
 ## 3. Query commands (`POST /despotes/v1/query`)
 
 | type | result fields |
 |---|---|
-| `status` | `{ inGame, screen, player: {name, x, y, z, yaw, pitch, health, dimension}, fps, windowFocused, loader, mcVersion, despotesVersion }` |
+| `status` | `{ inGame, screen, player: {name, x, y, z, yaw, pitch, health, dimension}, fps, windowFocused, mouseCaptured, loader, mcVersion, despotesVersion }` |
 | `screen` | `{ open, title, widgets: [{id/class, x, y, w, h, focused, label}] }` (widget tree, bounded depth 4) |
 | `inventory` | `{ hotbar, selectedSlot, slots: [{slot, item, count}] }` |
 | `pending` | `{ queueSize, executing: [...] }` |
