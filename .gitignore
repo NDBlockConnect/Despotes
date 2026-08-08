@@ -26,6 +26,9 @@ despotes-oplog.jsonl
 despotes-shots/
 despotes-in/
 
+# Release artifacts (attached to GitHub Releases, not committed)
+releases/**/*.jar
+
 # Local toolchain (JDKs, downloaded zips)
 .tools/
 
