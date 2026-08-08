@@ -101,9 +101,30 @@ public final class Dispatcher {
         queue.drainTo(batch, budget);
         executing.clear();
         for (Command cmd : batch) {
-            long start = System.nanoTime();
-            Result result;
             String type = Json.getStr(cmd.json, "type", "?");
+            long start = System.nanoTime();
+
+            // Screenshot runs on the async GPU-copy path: the response future is
+            // completed from the capture callback, never on this tick.
+            if (type.equals("screenshot")) {
+                try {
+                    ActionContext ctx = new ActionContext(despotes, cmd.requestId, cmd.sourceId, cmd.transport);
+                    Actions.executeScreenshotAsync(ctx, cmd.json, result -> {
+                        long durUs = (System.nanoTime() - start) / 1000;
+                        executing.add(String.format("[%s#%s] %s %s (%dus)", cmd.transport, cmd.requestId,
+                                "screenshot", result.ok() ? "ok" : "ERR:" + result.error().code(), durUs));
+                        despotes.opLog().record(new OpEntry(cmd.sourceId, cmd.transport, cmd.requestId,
+                                "screenshot", result, durUs));
+                        cmd.response.complete(result.toJsonString(cmd.requestId));
+                    });
+                } catch (Throwable t) {
+                    Result r = Result.fail(ProtocolError.internal(String.valueOf(t.getMessage())));
+                    cmd.response.complete(r.toJsonString(cmd.requestId));
+                }
+                continue;
+            }
+
+            Result result;
             try {
                 ActionContext ctx = new ActionContext(despotes, cmd.requestId, cmd.sourceId, cmd.transport);
                 result = Actions.execute(ctx, cmd.json);

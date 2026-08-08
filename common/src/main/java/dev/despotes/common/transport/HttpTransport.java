@@ -147,17 +147,20 @@ public final class HttpTransport implements ControlTransport {
         try {
             gate.checkPeer(ex.getRemoteAddress(), peerToken(ex));
             ScreenshotOptions opts = new ScreenshotOptions();
-            ShotHandle shot = despotes.platform().awaitOnClientThread(
-                    () -> despotes.platform().captureFrame(opts),
-                    despotes.config().http.screenshotTimeoutMs);
+            java.util.concurrent.CompletableFuture<ShotHandle> future = new java.util.concurrent.CompletableFuture<>();
+            despotes.platform().beginCapture(opts, future::complete);
+            ShotHandle shot = future.get(despotes.config().http.screenshotTimeoutMs,
+                    java.util.concurrent.TimeUnit.MILLISECONDS);
             if (shot == null) {
-                sendJson(ex, 504, Json.error(null, ProtocolError.timeout("screenshot timed out")));
+                sendJson(ex, 504, Json.error(null, ProtocolError.timeout("screenshot capture failed")));
                 return;
             }
             String ct = shot.format().equals("jpg") ? "image/jpeg" : "image/png";
             send(ex, 200, ct, shot.encoded());
         } catch (ProtocolError e) {
             sendJson(ex, 403, Json.error(null, e));
+        } catch (Exception e) {
+            sendJson(ex, 504, Json.error(null, ProtocolError.timeout("screenshot timed out")));
         }
     }
 

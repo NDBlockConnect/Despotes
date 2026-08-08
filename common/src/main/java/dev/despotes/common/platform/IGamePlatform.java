@@ -42,10 +42,12 @@ public interface IGamePlatform {
     <T> T awaitOnClientThread(Supplier<T> task, long timeoutMs);
 
     /**
-     * Capture the framebuffer synchronously on the calling thread (which must be the
-     * client thread). Reads the most recently rendered frame.
+     * Begin an asynchronous framebuffer capture. The submission happens on the client
+     * thread; {@code done} is invoked (possibly on another thread) with the captured
+     * shot, or null on failure/timeout. Callers must not block the client thread while
+     * waiting — the dispatcher parks the command's response future instead.
      */
-    ShotHandle captureFrame(ScreenshotOptions options);
+    void beginCapture(ScreenshotOptions options, java.util.function.Consumer<ShotHandle> done);
 
     /** True when a client world is loaded and the player exists. */
     boolean inGame();

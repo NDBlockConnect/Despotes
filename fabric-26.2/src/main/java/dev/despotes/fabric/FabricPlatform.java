@@ -282,29 +282,59 @@ public final class FabricPlatform implements IGamePlatform {
         }
     }
 
-    // ---- screenshot ----
+    // ---- screenshot (async GPU-copy path, explicit encoder submit) ----
 
     @Override
-    public ShotHandle captureFrame(ScreenshotOptions options) {
+    public void beginCapture(ScreenshotOptions options, java.util.function.Consumer<ShotHandle> done) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.gameRenderer == null) {
-            return null;
-        }
-        final NativeImage[] holder = new NativeImage[1];
-        net.minecraft.client.Screenshot.takeScreenshot(mc.gameRenderer.mainRenderTarget(), img -> holder[0] = img);
-        NativeImage img = holder[0];
-        if (img == null) {
-            return null;
+            done.accept(null);
+            return;
         }
         try {
-            Path tmp = Files.createTempFile("despotes-shot-", ".png");
-            img.writeToFile(tmp);
-            byte[] bytes = Files.readAllBytes(tmp);
-            Files.deleteIfExists(tmp);
-            return new FabricShotHandle(img.getWidth(), img.getHeight(), "png", bytes);
+            var target = mc.gameRenderer.mainRenderTarget();
+            int width = target.width;
+            int height = target.height;
+            var texture = target.getColorTexture();
+            if (texture == null) {
+                done.accept(null);
+                return;
+            }
+            var device = com.mojang.blaze3d.systems.RenderSystem.getDevice();
+            int blockSize = texture.getFormat().blockSize();
+            var buffer = device.createBuffer(() -> "despotes-screenshot",
+                    com.mojang.blaze3d.buffers.GpuBuffer.USAGE_MAP_READ,
+                    (long) width * height * blockSize);
+            var encoder = device.createCommandEncoder();
+            encoder.copyTextureToBuffer(texture, buffer, 0L, () -> {
+                // GPU copy completed — read back and encode.
+                try (var view = buffer.map(true, false)) {
+                    var image = new com.mojang.blaze3d.platform.NativeImage(width, height, false);
+                    var data = view.data();
+                    for (int row = 0; row < height; row++) {
+                        int base = row * width * blockSize;
+                        for (int col = 0; col < width; col++) {
+                            int pixel = data.getInt(base + col * blockSize);
+                            image.setPixelABGR(col, height - 1 - row, pixel | 0xFF000000);
+                        }
+                    }
+                    Path tmp = Files.createTempFile("despotes-shot-", ".png");
+                    image.writeToFile(tmp);
+                    byte[] bytes = Files.readAllBytes(tmp);
+                    Files.deleteIfExists(tmp);
+                    image.close();
+                    done.accept(new FabricShotHandle(width, height, "png", bytes));
+                } catch (Exception e) {
+                    log("[Despotes] capture encode failed: " + e.getMessage());
+                    done.accept(null);
+                } finally {
+                    buffer.close();
+                }
+            }, 0);
+            encoder.submit();
         } catch (Exception e) {
-            log("[Despotes] capture encode failed: " + e.getMessage());
-            return null;
+            log("[Despotes] capture submit failed: " + e.getMessage());
+            done.accept(null);
         }
     }
 

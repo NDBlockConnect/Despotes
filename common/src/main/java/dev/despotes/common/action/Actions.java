@@ -44,7 +44,8 @@ public final class Actions {
             case "use":
                 return doUse(ctx, cmd);
             case "screenshot":
-                return doScreenshot(ctx, cmd);
+                // Intercepted by the dispatcher (async capture path); defensive fallback.
+                throw ProtocolError.internal("screenshot must be routed through the async dispatcher path");
             case "status":
                 return doStatus(ctx);
             case "screen":
@@ -330,32 +331,66 @@ public final class Actions {
 
     // ---- screenshot ----
 
-    private static Result doScreenshot(ActionContext ctx, JsonObject cmd) {
+    /**
+     * Async screenshot execution. Invokes {@code done} with the final result on the
+     * capture callback thread (never blocks the client thread).
+     */
+    public static void executeScreenshotAsync(ActionContext ctx, JsonObject cmd,
+                                              java.util.function.Consumer<Result> done) {
         IGamePlatform p = ctx.despotes().platform();
         ScreenshotOptions opts = ScreenshotOptions.fromJson(cmd);
-        ShotHandle shot = p.captureFrame(opts);
-        if (shot == null) {
-            throw ProtocolError.timeout("screenshot capture timed out");
-        }
+        long deadline = System.currentTimeMillis()
+                + ctx.despotes().config().http.screenshotTimeoutMs;
+        java.util.concurrent.atomic.AtomicBoolean settled = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+        p.beginCapture(opts, shot -> {
+            if (!settled.compareAndSet(false, true)) {
+                return;
+            }
+            if (shot == null) {
+                done.accept(Result.fail(ProtocolError.timeout("screenshot capture failed")));
+                return;
+            }
+            try {
+                done.accept(buildScreenshotResult(ctx, shot, opts));
+            } catch (Throwable t) {
+                done.accept(Result.fail(ProtocolError.internal(String.valueOf(t.getMessage()))));
+            }
+        });
+
+        // Watchdog: fail the request if the capture callback never fires.
+        Thread watchdog = new Thread(() -> {
+            long remaining = deadline - System.currentTimeMillis();
+            try {
+                Thread.sleep(Math.max(50, remaining));
+            } catch (InterruptedException ignored) {
+            }
+            if (settled.compareAndSet(false, true)) {
+                done.accept(Result.fail(ProtocolError.timeout("screenshot capture timed out")));
+            }
+        }, "Despotes-shot-watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
+    }
+
+    private static Result buildScreenshotResult(ActionContext ctx, ShotHandle shot,
+                                                ScreenshotOptions opts) throws java.io.IOException {
+        IGamePlatform p = ctx.despotes().platform();
         JsonObject res = new JsonObject();
         res.addProperty("executed", "screenshot");
         res.addProperty("width", shot.width());
         res.addProperty("height", shot.height());
         res.addProperty("format", shot.format());
         if (opts.save) {
-            Path dir = opts.path != null
-                    ? Path.of(opts.path)
+            java.nio.file.Path dir = opts.path != null
+                    ? java.nio.file.Path.of(opts.path)
                     : p.gameDir().resolve(ctx.despotes().config().capture.dir);
-            try {
-                Files.createDirectories(dir);
-                String name = LocalDateTime.now().format(SHOT_STAMP) + "-"
-                        + safeId(ctx.requestId()) + "." + shot.format();
-                Path file = dir.resolve(name);
-                Files.write(file, shot.encoded());
-                res.addProperty("path", file.toAbsolutePath().toString());
-            } catch (Exception e) {
-                throw ProtocolError.internal("failed to save screenshot: " + e.getMessage());
-            }
+            java.nio.file.Files.createDirectories(dir);
+            String name = LocalDateTime.now().format(SHOT_STAMP) + "-"
+                    + safeId(ctx.requestId()) + "." + shot.format();
+            java.nio.file.Path file = dir.resolve(name);
+            java.nio.file.Files.write(file, shot.encoded());
+            res.addProperty("path", file.toAbsolutePath().toString());
         } else {
             res.addProperty("base64", Base64.getEncoder().encodeToString(shot.encoded()));
         }
