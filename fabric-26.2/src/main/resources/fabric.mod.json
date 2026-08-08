@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "despotes",
+  "version": "${version}",
+  "name": "Despotes",
+  "description": "In-process local control channel for Minecraft: external sources drive the game without touching your keyboard or mouse.",
+  "authors": ["StarsailsClover"],
+  "contact": {
+    "homepage": "https://github.com/NDBlockConnect/Despotes",
+    "sources": "https://github.com/NDBlockConnect/Despotes"
+  },
+  "license": "Apache-2.0",
+  "icon": "assets/despotes/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.despotes.fabric.DespotesFabricClient"]
+  },
+  "mixins": ["despotes.mixins.json"],
+  "accessWidener": "despotes.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "minecraft": "26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

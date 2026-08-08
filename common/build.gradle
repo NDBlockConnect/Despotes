@@ -1,0 +1,20 @@
+plugins {
+    id 'java-library'
+}
+
+group = maven_group
+version = mod_version
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    // Gson is provided by the Minecraft runtime; compile-only here.
+    compileOnly libs.gson
+    compileOnly libs.annotations
+}
