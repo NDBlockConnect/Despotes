@@ -1,8 +1,8 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'fabric-loom' version "${loom_version}"
 }
 
-version = mod_version + '-fabric-26.2'
+version = mod_version + '-fabric-1.21.1'
 group = maven_group
 
 loom {
@@ -11,10 +11,10 @@ loom {
 
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
-    implementation "net.fabricmc:fabric-loader:${loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     compileOnly "com.google.code.gson:gson:2.11.0"
-    compileOnly "com.google.code.findbugs:jsr305:3.0.2"
     compileOnly "org.jetbrains:annotations:24.0.1"
 }
 
@@ -28,12 +28,11 @@ sourceSets {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 25
+    options.release = 21
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(25)
-    withSourcesJar()
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
 processResources {
@@ -45,5 +44,5 @@ processResources {
 
 jar {
     archiveBaseName = 'Despotes'
-    archiveVersion = mod_version + '-fabric-26.2'
+    archiveVersion = mod_version + '-fabric-1.21.1'
 }

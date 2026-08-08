@@ -1,12 +1,10 @@
 pluginManagement {
     repositories {
+        maven { url = 'https://maven.architectury.dev/' }
         maven { url = 'https://maven.fabricmc.net/' }
         gradlePluginPortal()
         mavenCentral()
     }
 }
 
-rootProject.name = 'Despotes-fabric'
-
-include 'common'
-include 'fabric-26.2'
+rootProject.name = 'Despotes-fabric-1.21.1'
