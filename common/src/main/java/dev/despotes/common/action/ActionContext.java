@@ -40,8 +40,8 @@ public final class ActionContext {
         }
     }
 
+    /** Requires an open screen. Does NOT require a loaded world (menus count). */
     public void requireScreen() {
-        requireInGame();
         if (despotes.platform().screen() == null || !despotes.platform().screen().open()) {
             throw ProtocolError.notOnScreen();
         }

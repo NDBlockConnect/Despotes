@@ -110,7 +110,6 @@ public final class Actions {
 
     private static Result doType(ActionContext ctx, JsonObject cmd) {
         IGamePlatform p = ctx.despotes().platform();
-        ctx.requireInGame();
         String text = Json.getStr(cmd, "text", "");
         if (text.isEmpty()) {
             throw ProtocolError.badRequest("'text' is required");
@@ -237,10 +236,9 @@ public final class Actions {
 
     private static Result doClick(ActionContext ctx, JsonObject cmd) {
         IGamePlatform p = ctx.despotes().platform();
-        ctx.requireInGame();
         if (p.screen() == null || !p.screen().open()) {
-            // Fall back to world interaction via crosshair.
-            String op = Json.normalize(Json.getStr(cmd, "op", "click"));
+            // No GUI open: fall back to world interaction via crosshair (requires a world).
+            ctx.requireInGame();
             int button = Json.getInt(cmd, "button", 0);
             if (button == 0) {
                 p.worldAttack();
