@@ -20,6 +20,9 @@ base {
 
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
+    compileOnly files("C:/Users/Sails/AppData/Local/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-client.jar")
+    compileOnly files("C:/Users/Sails/AppData/Local/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-universal.jar")
+    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
     compileOnly "com.google.code.gson:gson:2.11.0"
 }
 
@@ -61,6 +64,9 @@ tasks.withType(ProcessResources).configureEach {
             mod_semver             : mod_semver
     ]
     inputs.properties replaceProperties
+    filesMatching('META-INF/mods.toml') {
+        expand replaceProperties
+    }
     filesMatching('META-INF/neoforge.mods.toml') {
         expand replaceProperties
     }
