@@ -1,0 +1,25 @@
+license = "${mod_license}"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${mod_semver}"
+displayName = "${mod_name}"
+description = "In-process local control channel for Minecraft: external sources drive the game without touching your keyboard or mouse."
+authors = "StarsailsClover"
+
+[features.${mod_id}]
+javaVersion = "[21,)"
+
+[[dependencies.${mod_id}]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neo_version},)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "CLIENT"
