@@ -28,11 +28,6 @@ minecraft {
     runs {
         client {
             workingDirectory project.file('run')
-            mods {
-                despotes {
-                    source sourceSets.main
-                }
-            }
         }
     }
 }
