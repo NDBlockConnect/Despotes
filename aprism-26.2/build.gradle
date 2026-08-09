@@ -1,0 +1,54 @@
+plugins {
+    id 'java-library'
+    id 'java'
+}
+
+version = mod_version + '-aprism-26.2'
+group = mod_group_id
+
+base {
+    archivesName = 'Despotes'
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+
+def mcClient = file("C:/Users/Sails/AppData/Local/mdl/versions/26.2/26.2.jar")
+def aprismApi = file("C:/Users/Sails/Documents/Workspace/NormalWorkspace/Coding/Minecraft/Aprism/Aprism/aprism-api/build/classes/java/main")
+
+dependencies {
+    compileOnly files(mcClient)
+    compileOnly files(aprismApi)
+    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
+    compileOnly "com.google.code.gson:gson:2.11.0"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir file('../common/src/main/java')
+            srcDir file('src/main/java')
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+// Pack the .aje: manifest at the zip root plus the compiled mod jar (Aprism doc 7 layout).
+tasks.register('packageAje', Zip) {
+    dependsOn jar
+    archiveExtension = 'aje'
+    archiveVersion = mod_version + '-aprism-26.2'
+    from("src/main/resources") {
+        include 'aprism.manifest.json'
+    }
+    from(jar.archiveFile) {
+        rename { "despotes.jar" }
+    }
+}
+
+build.dependsOn packageAje
