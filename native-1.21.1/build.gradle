@@ -1,0 +1,50 @@
+plugins {
+    id 'java-library'
+}
+
+version = mod_version + '-native-1.21.1'
+group = mod_group_id
+
+base {
+    archivesName = 'Despotes'
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+def mcClient = file("C:/Users/Sails/AppData/Local/mdl/versions/1.21.1/1.21.1.jar")
+
+dependencies {
+    compileOnly files(mcClient)
+    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
+    compileOnly "com.google.code.gson:gson:2.11.0"
+    compileOnly "org.jetbrains:annotations:24.0.1"
+    compileOnly "com.google.code.findbugs:jsr305:3.0.2"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir file('../common/src/main/java')
+            srcDir file('src/main/java')
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+jar {
+    archiveVersion = mod_version + '-native-1.21.1'
+    manifest {
+        attributes([
+            'Premain-Class'       : 'dev.despotes.vanilla.DespotesAgent',
+            'Agent-Class'         : 'dev.despotes.vanilla.DespotesAgent',
+            'Specification-Title' : mod_id,
+            'Implementation-Version' : mod_semver
+        ])
+    }
+}

@@ -1,0 +1,51 @@
+plugins {
+    id 'java-library'
+}
+
+version = mod_version + '-native-1.20.1'
+group = mod_group_id
+
+base {
+    archivesName = 'Despotes'
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+
+// Official-named 1.20.1 client jar produced by the Fabric Loom cache.
+def mcClient = file("C:/Users/Sails/Documents/Workspace/NormalWorkspace/Coding/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-b7a764897f/1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2/minecraft-merged-b7a764897f-1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2.jar")
+
+dependencies {
+    compileOnly files(mcClient)
+    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
+    compileOnly "com.google.code.gson:gson:2.11.0"
+    compileOnly "org.jetbrains:annotations:24.0.1"
+    compileOnly fileTree(dir: "C:/Users/Sails/Documents/Workspace/NormalWorkspace/Coding/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/remapped_mods/loom_mappings_1_20_1_layered_hash_2198_v2", include: "**/*.jar")
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir file('../common/src/main/java')
+            srcDir file('src/main/java')
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+}
+
+jar {
+    archiveVersion = mod_version + '-native-1.20.1'
+    manifest {
+        attributes([
+            'Premain-Class'       : 'dev.despotes.vanilla.DespotesAgent',
+            'Agent-Class'         : 'dev.despotes.vanilla.DespotesAgent',
+            'Specification-Title' : mod_id,
+            'Implementation-Version' : mod_semver
+        ])
+    }
+}
