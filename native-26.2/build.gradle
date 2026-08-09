@@ -1,0 +1,53 @@
+plugins {
+    id 'java-library'
+}
+
+version = mod_version + '-native-26.2'
+group = mod_group_id
+
+base {
+    archivesName = 'Despotes'
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+
+// Compile against the official-named vanilla 26.2 client jar (Mojang unobfuscated from
+// 26.1 onward). Gson ships with the Minecraft client, so it is compileOnly here too.
+def mcClient = file("C:/Users/Sails/AppData/Local/mdl/versions/26.2/26.2.jar")
+
+dependencies {
+    compileOnly files(mcClient)
+    // Full vanilla dependency set (fastutil/guava/joml/slf4j/...): javac must resolve every
+    // type referenced by MC signatures.
+    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
+    compileOnly "com.google.code.gson:gson:2.11.0"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir file('../common/src/main/java')
+            srcDir file('src/main/java')
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+jar {
+    archiveVersion = mod_version + '-native-26.2'
+    manifest {
+        attributes([
+            'Premain-Class'       : 'dev.despotes.vanilla.DespotesAgent',
+            'Agent-Class'         : 'dev.despotes.vanilla.DespotesAgent',
+            'Can-Retransform-Classes' : 'false',
+            'Specification-Title' : mod_id,
+            'Implementation-Version' : mod_semver
+        ])
+    }
+}
