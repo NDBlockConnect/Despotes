@@ -49,6 +49,14 @@ public final class LegacyScreenHandle implements ScreenHandle {
             JsonObject o = new JsonObject();
             o.addProperty("class", child.getClass().getSimpleName());
             o.addProperty("focused", child.isFocused());
+            try {
+                var rect = child.getRectangle();
+                o.addProperty("x", rect.left());
+                o.addProperty("y", rect.top());
+                o.addProperty("w", rect.width());
+                o.addProperty("h", rect.height());
+            } catch (Throwable ignored) {
+            }
             arr.add(o);
         }
         return arr;

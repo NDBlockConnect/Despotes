@@ -31,6 +31,7 @@ public final class DespotesNeoForgeClient {
         NeoForge.EVENT_BUS.addListener((RenderGuiEvent.Post e) -> {
             Despotes d = bootOnce();
             if (d != null) {
+                d.frameEnd();
                 HudOverlay.draw(e.getGuiGraphics(), Minecraft.getInstance().font);
             }
         });

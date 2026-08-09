@@ -152,4 +152,37 @@ public interface IGamePlatform {
      */
     default void setPauseOnLostFocus(boolean enabled) {
     }
+
+    /** Set the OS window minimized state (used to yield focus on start). */
+    default void setWindowMinimized(boolean minimized) {
+    }
+
+    /**
+     * Run a semantic function action (F5-class keys, issue 4). Returns true when handled.
+     * Names: "toggle-perspective" | "toggle-debug" | "toggle-fullscreen" | "toggle-hide-gui"
+     * | "open-inventory" | "screenshot-save" | "reload-resources".
+     */
+    default boolean runFunction(String fn) {
+        return false;
+    }
+
+    /** World summary (data-level perception): biome, time, difficulty, seed... */
+    default com.google.gson.JsonObject probeWorld() {
+        return new com.google.gson.JsonObject();
+    }
+
+    /** Block data snapshot around a centre, radius-limited. */
+    default com.google.gson.JsonObject probeBlocks(int x, int y, int z, int r) {
+        return new com.google.gson.JsonObject();
+    }
+
+    /** Nearby entities within radius, nearest-first, capped. */
+    default com.google.gson.JsonObject probeEntities(double radius) {
+        return new com.google.gson.JsonObject();
+    }
+
+    /** What the crosshair currently targets (block or entity) with distance. */
+    default com.google.gson.JsonObject probeTarget() {
+        return new com.google.gson.JsonObject();
+    }
 }

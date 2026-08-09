@@ -21,6 +21,8 @@ public final class FileDropTransport implements ControlTransport {
 
     private Thread thread;
     private volatile boolean running;
+    /** Fingerprint (size|lastModified) of already-consumed files, to avoid replaying them. */
+    private final java.util.Map<String, String> consumed = new java.util.HashMap<>();
 
     @Override
     public String id() {
@@ -47,7 +49,14 @@ public final class FileDropTransport implements ControlTransport {
                         if (!running || processed >= max) {
                             break;
                         }
+                        String key = f.getFileName().toString();
+                        String sig = sig(f);
+                        String seen = consumed.get(key);
+                        if (seen != null && seen.equals(sig)) {
+                            continue; // already consumed; re-consume only if the file changes
+                        }
                         processOne(despotes, gate, f);
+                        consumed.put(key, sig);
                         processed++;
                     }
                     Thread.sleep(500);
@@ -80,6 +89,14 @@ public final class FileDropTransport implements ControlTransport {
         }
         Collections.sort(out);
         return out;
+    }
+
+    private static String sig(Path f) {
+        try {
+            return Files.size(f) + "|" + Files.getLastModifiedTime(f).toMillis();
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private void processOne(Despotes despotes, SecurityGate gate, Path f) {

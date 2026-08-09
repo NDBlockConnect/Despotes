@@ -16,6 +16,10 @@ public abstract class HudMixin {
 
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void despotes$overlay(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        dev.despotes.common.Despotes d = dev.despotes.common.Despotes.get();
+        if (d != null) {
+            d.frameEnd();
+        }
         HudOverlay.draw(graphics, Minecraft.getInstance().font);
     }
 }

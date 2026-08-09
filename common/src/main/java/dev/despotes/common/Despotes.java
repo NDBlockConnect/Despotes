@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import dev.despotes.common.config.DespotesConfig;
 import dev.despotes.common.dispatcher.Dispatcher;
 import dev.despotes.common.focus.FocusManager;
+import dev.despotes.common.look.LookSmoother;
 import dev.despotes.common.platform.IGamePlatform;
 import dev.despotes.common.transport.CliTransport;
 import dev.despotes.common.transport.ControlTransport;
@@ -26,7 +27,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.0";
+    public static final String VERSION = "v26.1-Alpha.1";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -35,6 +36,7 @@ public final class Despotes {
     private final DespotesConfig config;
     private final Dispatcher dispatcher;
     private final FocusManager focusManager;
+    private final LookSmoother lookSmoother;
     private final OpLog opLog;
     private final Overlay overlay;
     private final List<ControlTransport> transports = new ArrayList<>();
@@ -45,6 +47,7 @@ public final class Despotes {
         this.config = config;
         this.configPath = configPath;
         this.focusManager = new FocusManager(platform);
+        this.lookSmoother = new LookSmoother(platform);
         this.opLog = new OpLog(config);
         this.overlay = new Overlay(config);
         this.dispatcher = new Dispatcher(this);
@@ -60,6 +63,16 @@ public final class Despotes {
         DespotesConfig config = DespotesConfig.loadOrCreate(configPath, platform);
         Despotes d = new Despotes(platform, config, configPath);
         instance = d;
+        if (!config.window.grabFocusOnStart) {
+            // Yield OS focus on start: minimize once so the launcher/user keeps focus.
+            try {
+                platform.setWindowMinimized(true);
+                platform.scheduleOnClientThread(() -> platform.setWindowMinimized(false));
+                platform.log("[Despotes] window.grabFocusOnStart=false — not taking focus on start.");
+            } catch (Throwable t) {
+                platform.log("[Despotes] focus yield on start failed: " + t);
+            }
+        }
         d.startTransports();
         platform.log("[Despotes] " + VERSION + " booted on loader '" + platform.loaderId()
                 + "' (MC " + platform.mcVersion() + "). Config: " + configPath);
@@ -100,6 +113,7 @@ public final class Despotes {
 
     /** Called at the end of each rendered frame on the render thread. */
     public void frameEnd() {
+        lookSmoother.frameEnd();
         dispatcher.frameEnd();
     }
 
@@ -129,6 +143,10 @@ public final class Despotes {
 
     public DespotesConfig config() {
         return config;
+    }
+
+    public LookSmoother lookSmoother() {
+        return lookSmoother;
     }
 
     public Dispatcher dispatcher() {

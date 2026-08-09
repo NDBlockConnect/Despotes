@@ -385,6 +385,36 @@ public final class FabricPlatform implements IGamePlatform {
     }
 
     @Override
+    public boolean runFunction(String fn) {
+        return dev.despotes.common.action.FunctionActions.run(this, fn).get("handled").getAsBoolean();
+    }
+
+    @Override
+    public com.google.gson.JsonObject probeWorld() {
+        return dev.despotes.common.probe.WorldProbes.world(Minecraft.getInstance());
+    }
+
+    @Override
+    public com.google.gson.JsonObject probeBlocks(int x, int y, int z, int r) {
+        return dev.despotes.common.probe.WorldProbes.blocks(Minecraft.getInstance(), x, y, z, r);
+    }
+
+    @Override
+    public com.google.gson.JsonObject probeEntities(double radius) {
+        return dev.despotes.common.probe.WorldProbes.entities(Minecraft.getInstance(), radius);
+    }
+
+    @Override
+    public com.google.gson.JsonObject probeTarget() {
+        return dev.despotes.common.probe.WorldProbes.target(Minecraft.getInstance());
+    }
+
+    @Override
+    public void setWindowMinimized(boolean minimized) {
+        dev.despotes.common.focus.WindowControl.setMinimized(Minecraft.getInstance().getWindow(), minimized);
+    }
+
+    @Override
     public void setPauseOnLostFocus(boolean enabled) {
         Minecraft.getInstance().options.pauseOnLostFocus = enabled;
     }

@@ -51,6 +51,18 @@ public final class FocusManager {
         } catch (Throwable t) {
             return;
         }
+
+        // While unfocused, vanilla can re-grab the cursor on some ticks. Keep it released
+        // every tick so the game never locks/steals the user's mouse while they work
+        // in another app.
+        if (!focused && config.focus.keepReleasedWhileUnfocused
+                && platform.isMouseCaptured()) {
+            try {
+                platform.releaseMouseCapture();
+            } catch (Throwable t) {
+                platform.log("[Despotes] keep-released failed: " + t);
+            }
+        }
         if (lastFocused == null) {
             lastFocused = focused;
             return;

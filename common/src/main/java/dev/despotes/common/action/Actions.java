@@ -39,6 +39,8 @@ public final class Actions {
                 return doMove(ctx, cmd);
             case "look":
                 return doLook(ctx, cmd);
+            case "function":
+                return doFunction(ctx, cmd);
             case "click":
                 return doClick(ctx, cmd);
             case "use":
@@ -54,6 +56,15 @@ public final class Actions {
                 return doScreenQuery(ctx);
             case "inventory":
                 return doInventoryQuery(ctx);
+            case "world":
+                return Result.ok(ctx.despotes().platform().probeWorld());
+            case "blocks":
+                return doBlocksQuery(ctx, cmd);
+            case "entities":
+                return Result.ok(ctx.despotes().platform()
+                        .probeEntities(Json.getDouble(cmd, "radius", 8)));
+            case "target":
+                return Result.ok(ctx.despotes().platform().probeTarget());
             case "pending":
                 return doPending(ctx);
             case "config-reload":
@@ -213,18 +224,11 @@ public final class Actions {
             throw ProtocolError.badRequest("unknown 'mode': " + mode);
         }
 
-        if (smooth <= 1) {
-            p.setRotation(targetYaw, targetPitch);
-        } else {
-            float startYaw = player.yaw();
-            float startPitch = player.pitch();
-            for (int i = 1; i <= smooth; i++) {
-                final float f = i / (float) smooth;
-                final float iy = startYaw + (targetYaw - startYaw) * f;
-                final float ip = startPitch + (targetPitch - startPitch) * f;
-                ctx.despotes().dispatcher().scheduleInTicks(i, () -> p.setRotation(iy, ip));
-            }
-        }
+        // Frame-driven easing (issue 2) unless disabled. smoothTicks<=1 => instant.
+        long durationMs = smooth <= 1 ? 0
+                : (long) Json.getDouble(cmd, "durationMs",
+                        ctx.despotes().config().movement.lookSmoothMs);
+        ctx.despotes().lookSmoother().start(targetYaw, targetPitch, durationMs);
         JsonObject res = new JsonObject();
         res.addProperty("executed", "look");
         res.addProperty("mode", mode);
@@ -235,6 +239,39 @@ public final class Actions {
 
     private static float clampPitch(float pitch) {
         return Math.max(-89.9f, Math.min(89.9f, pitch));
+    }
+
+    // ---- function (semantic keys, issue 4) ----
+
+    private static Result doFunction(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        String fn = Json.normalize(Json.getStr(cmd, "name", ""));
+        if (fn.isEmpty()) {
+            throw ProtocolError.badRequest("'name' is required");
+        }
+        boolean handled = p.runFunction(fn);
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "function");
+        res.addProperty("name", fn);
+        res.addProperty("handled", handled);
+        if (!handled) {
+            res.addProperty("note", "platform does not support this function");
+        }
+        return Result.ok(res);
+    }
+
+    private static Result doBlocksQuery(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        var player = p.player();
+        int x = (int) Math.floor(player.x());
+        int y = (int) Math.floor(player.y());
+        int z = (int) Math.floor(player.z());
+        if (cmd.has("x")) x = Json.getInt(cmd, "x", x);
+        if (cmd.has("y")) y = Json.getInt(cmd, "y", y);
+        if (cmd.has("z")) z = Json.getInt(cmd, "z", z);
+        int r = Math.min(8, Math.max(1, Json.getInt(cmd, "radius", 3)));
+        return Result.ok(p.probeBlocks(x, y, z, r));
     }
 
     // ---- click ----

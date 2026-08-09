@@ -17,6 +17,7 @@ public final class ForgeHudOverlay {
     public static final LayeredDraw.Layer LAYER = (graphics, deltaTracker) -> {
         Despotes d = Despotes.get();
         if (d != null) {
+            d.frameEnd();
             draw(d, graphics);
         }
     };

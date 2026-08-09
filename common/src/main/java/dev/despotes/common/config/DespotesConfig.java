@@ -43,6 +43,8 @@ public final class DespotesConfig {
     public final Movement movement = new Movement();
     // focus
     public final Focus focus = new Focus();
+    // window
+    public final Window window = new Window();
 
     public int schemaVersion = 1;
 
@@ -103,6 +105,14 @@ public final class DespotesConfig {
 
     public static final class Movement {
         public int defaultLookSmoothTicks = 4;
+        /** Frame-driven look easing duration in milliseconds (0 = instant). */
+        public int lookSmoothMs = 200;
+    }
+
+    /** Window focus policy on launch. */
+    public static final class Window {
+        /** When false (default), Despotes never grabs OS focus while starting. */
+        public boolean grabFocusOnStart = false;
     }
 
     /** Focus handling: keeps the OS mouse free while the game window is unfocused. */
@@ -116,6 +126,11 @@ public final class DespotesConfig {
          * is unfocused (the game keeps ticking and stays unpaused).
          */
         public boolean preventPauseOnFocusLoss = true;
+        /**
+         * Continuously keep the mouse released while the window is unfocused, so the game
+         * never steals OS focus while you work in another app.
+         */
+        public boolean keepReleasedWhileUnfocused = true;
     }
 
     public boolean sourceEnabled(String transport) {
@@ -190,6 +205,9 @@ public final class DespotesConfig {
         this.visualization.opLog = o.visualization.opLog;
         this.visualization.opLogFile = o.visualization.opLogFile;
         this.movement.defaultLookSmoothTicks = o.movement.defaultLookSmoothTicks;
+        this.movement.lookSmoothMs = o.movement.lookSmoothMs;
+        this.window.grabFocusOnStart = o.window.grabFocusOnStart;
+        this.focus.keepReleasedWhileUnfocused = o.focus.keepReleasedWhileUnfocused;
         this.focus.releaseMouseOnFocusLoss = o.focus.releaseMouseOnFocusLoss;
         this.focus.regrabMouseOnFocusGain = o.focus.regrabMouseOnFocusGain;
         this.focus.preventPauseOnFocusLoss = o.focus.preventPauseOnFocusLoss;
@@ -267,11 +285,19 @@ public final class DespotesConfig {
         }
         if (root.has("movement") && (o = root.getAsJsonObject("movement")) != null) {
             movement.defaultLookSmoothTicks = integer(o, "defaultLookSmoothTicks", movement.defaultLookSmoothTicks);
+            movement.lookSmoothMs = integer(o, "lookSmoothMs", movement.lookSmoothMs);
+        }
+        if (root.has("window") && (o = root.getAsJsonObject("window")) != null) {
+            window.grabFocusOnStart = bool(o, "grabFocusOnStart", window.grabFocusOnStart);
+        }
+        if (root.has("focus") && (o = root.getAsJsonObject("focus")) != null) {
+            focus.keepReleasedWhileUnfocused = bool(o, "keepReleasedWhileUnfocused", focus.keepReleasedWhileUnfocused);
         }
         if (root.has("focus") && (o = root.getAsJsonObject("focus")) != null) {
             focus.releaseMouseOnFocusLoss = bool(o, "releaseMouseOnFocusLoss", focus.releaseMouseOnFocusLoss);
             focus.regrabMouseOnFocusGain = bool(o, "regrabMouseOnFocusGain", focus.regrabMouseOnFocusGain);
             focus.preventPauseOnFocusLoss = bool(o, "preventPauseOnFocusLoss", focus.preventPauseOnFocusLoss);
+            focus.keepReleasedWhileUnfocused = bool(o, "keepReleasedWhileUnfocused", focus.keepReleasedWhileUnfocused);
         }
     }
 
@@ -350,7 +376,12 @@ public final class DespotesConfig {
 
         JsonObject m = new JsonObject();
         m.addProperty("defaultLookSmoothTicks", movement.defaultLookSmoothTicks);
+        m.addProperty("lookSmoothMs", movement.lookSmoothMs);
         root.add("movement", m);
+
+        JsonObject w = new JsonObject();
+        w.addProperty("grabFocusOnStart", window.grabFocusOnStart);
+        root.add("window", w);
 
         JsonObject fo = new JsonObject();
         fo.addProperty("releaseMouseOnFocusLoss", focus.releaseMouseOnFocusLoss);
