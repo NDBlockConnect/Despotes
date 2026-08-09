@@ -25,6 +25,8 @@ public final class FocusManager {
     private Boolean lastFocused;
     private boolean capturedBeforeLoss;
     private boolean pauseSettingApplied;
+    private Object userForeground;
+    private long lostNanos;
 
     public FocusManager(IGamePlatform platform) {
         this.platform = platform;
@@ -73,6 +75,8 @@ public final class FocusManager {
         lastFocused = focused;
 
         if (!focused) {
+            lostNanos = System.nanoTime();
+            userForeground = dev.despotes.common.focus.Win32Focus.foregroundHandle();
             if (config.focus.releaseMouseOnFocusLoss && platform.isMouseCaptured()) {
                 capturedBeforeLoss = true;
                 try {
@@ -83,6 +87,15 @@ public final class FocusManager {
                 }
             }
         } else {
+            // If the game stole focus back within 1.5s of the user leaving, hand the OS
+            // focus back to the user's window (best-effort, optional JNA).
+            long sinceLossMs = (System.nanoTime() - lostNanos) / 1_000_000L;
+            if (config.focus.returnFocusOnSteal && userForeground != null
+                    && sinceLossMs < 1500) {
+                dev.despotes.common.focus.Win32Focus.setForeground(userForeground);
+                platform.log("[Despotes] returned OS focus to user window (steal guard).");
+            }
+            userForeground = null;
             if (config.focus.regrabMouseOnFocusGain && capturedBeforeLoss
                     && !platform.isMouseCaptured()) {
                 try {

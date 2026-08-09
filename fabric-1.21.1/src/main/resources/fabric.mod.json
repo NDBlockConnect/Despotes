@@ -4,7 +4,9 @@
   "version": "${version}",
   "name": "Despotes",
   "description": "In-process local control channel for Minecraft: external sources drive the game without touching your keyboard or mouse.",
-  "authors": ["StarsailsClover"],
+  "authors": [
+    "StarsailsClover"
+  ],
   "contact": {
     "homepage": "https://github.com/NDBlockConnect/Despotes",
     "sources": "https://github.com/NDBlockConnect/Despotes"
@@ -12,14 +14,37 @@
   "license": "Apache-2.0",
   "environment": "client",
   "entrypoints": {
-    "client": ["dev.despotes.fabric.DespotesLegacyFabricClient"]
+    "client": [
+      "dev.despotes.fabric.DespotesLegacyFabricClient"
+    ]
   },
   "depends": {
     "fabricloader": ">=0.15.0",
-    "minecraft": ["1.20", "1.20.1", "1.20.2", "1.20.3", "1.20.4", "1.20.5", "1.20.6",
-                  "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6",
-                  "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11"],
+    "minecraft": [
+      "1.20",
+      "1.20.1",
+      "1.20.2",
+      "1.20.3",
+      "1.20.4",
+      "1.20.5",
+      "1.20.6",
+      "1.21",
+      "1.21.1",
+      "1.21.2",
+      "1.21.3",
+      "1.21.4",
+      "1.21.5",
+      "1.21.6",
+      "1.21.7",
+      "1.21.8",
+      "1.21.9",
+      "1.21.10",
+      "1.21.11"
+    ],
     "java": ">=17",
     "fabric-api": "*"
-  }
+  },
+  "mixins": [
+    "despotes.mixins.json"
+  ]
 }

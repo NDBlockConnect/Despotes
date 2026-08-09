@@ -31,6 +31,12 @@ public final class LookSmoother {
 
     /** Begin an eased rotation. {@code durationMs <= 0} applies immediately. */
     public synchronized void start(float targetYaw, float targetPitch, long durationMs) {
+        // If the user has OS focus they drive the camera manually — never overwrite
+        // their input (issue: manual look was yanked back).
+        if (platform.windowFocused()) {
+            active = false;
+            return;
+        }
         var player = platform.player();
         if (player == null) {
             return;

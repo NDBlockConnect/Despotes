@@ -131,6 +131,8 @@ public final class DespotesConfig {
          * never steals OS focus while you work in another app.
          */
         public boolean keepReleasedWhileUnfocused = true;
+        /** If the game steals OS focus right after the user left, return it to the user. */
+        public boolean returnFocusOnSteal = true;
     }
 
     public boolean sourceEnabled(String transport) {
@@ -208,6 +210,7 @@ public final class DespotesConfig {
         this.movement.lookSmoothMs = o.movement.lookSmoothMs;
         this.window.grabFocusOnStart = o.window.grabFocusOnStart;
         this.focus.keepReleasedWhileUnfocused = o.focus.keepReleasedWhileUnfocused;
+        this.focus.returnFocusOnSteal = o.focus.returnFocusOnSteal;
         this.focus.releaseMouseOnFocusLoss = o.focus.releaseMouseOnFocusLoss;
         this.focus.regrabMouseOnFocusGain = o.focus.regrabMouseOnFocusGain;
         this.focus.preventPauseOnFocusLoss = o.focus.preventPauseOnFocusLoss;
