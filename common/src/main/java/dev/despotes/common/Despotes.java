@@ -5,6 +5,7 @@ import dev.despotes.common.config.DespotesConfig;
 import dev.despotes.common.dispatcher.Dispatcher;
 import dev.despotes.common.events.EventBus;
 import dev.despotes.common.focus.FocusManager;
+import dev.despotes.common.lifecycle.LifeCycleMonitor;
 import dev.despotes.common.look.LookSmoother;
 import dev.despotes.common.platform.IGamePlatform;
 import dev.despotes.common.transport.CliTransport;
@@ -28,7 +29,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.1";
+    public static final String VERSION = "v26.2-Alpha.1";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -41,6 +42,7 @@ public final class Despotes {
     private final OpLog opLog;
     private final EventBus eventBus = new EventBus();
     private final Overlay overlay;
+    private final LifeCycleMonitor lifeCycle;
     private final List<ControlTransport> transports = new ArrayList<>();
     private final Path configPath;
 
@@ -53,6 +55,7 @@ public final class Despotes {
         this.opLog = new OpLog(config);
         this.overlay = new Overlay(config);
         this.dispatcher = new Dispatcher(this);
+        this.lifeCycle = new LifeCycleMonitor(this);
     }
 
     /** Boots Despotes. Safe to call multiple times; only the first call has an effect. */
@@ -110,6 +113,7 @@ public final class Despotes {
     /** Called once per client tick on the client thread. */
     public void clientTick() {
         focusManager.tick(config);
+        lifeCycle.tick();
         dispatcher.tick();
     }
 
@@ -167,6 +171,10 @@ public final class Despotes {
         return overlay;
     }
 
+    public LifeCycleMonitor lifeCycle() {
+        return lifeCycle;
+    }
+
     public List<ControlTransport> transports() {
         return transports;
     }
@@ -187,6 +195,7 @@ public final class Despotes {
         o.addProperty("screenOpen", platform.screen() != null && platform.screen().open());
         o.addProperty("mouseCaptured", platform.isMouseCaptured());
         o.addProperty("queueSize", dispatcher.queueSize());
+        o.add("lifecycle", lifeCycle.snapshot());
         return o;
     }
 }

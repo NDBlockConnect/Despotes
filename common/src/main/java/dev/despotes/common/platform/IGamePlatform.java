@@ -92,6 +92,32 @@ public interface IGamePlatform {
     default void sendChat(String text) {
     }
 
+    /**
+     * Send a slash command (with or without the leading '/') through the command channel.
+     * v26.2-Alpha.1 fix: previously a command was pushed through {@link #sendChat(String)},
+     * which signs it as a chat message, so the server never executed it. This default
+     * reflectively resolves {@code ClientPacketListener.sendCommand(String)} (present under
+     * the same official name on every supported MC version) so no loader line needs a change;
+     * it falls back to {@link #sendChat(String)} only if the command channel is unavailable.
+     */
+    default void sendCommand(String command) {
+        String cmd = command.startsWith("/") ? command.substring(1) : command;
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            Object conn = mc.getClass().getMethod("getConnection").invoke(mc);
+            if (conn != null) {
+                try {
+                    conn.getClass().getMethod("sendCommand", String.class).invoke(conn, cmd);
+                    return;
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        sendChat("/" + cmd);
+    }
+
     /** Set synthetic movement state for the current tick. */
     default void setMovement(double forward, double left, boolean jump, boolean sneak, boolean sprint) {
     }
@@ -211,6 +237,76 @@ public interface IGamePlatform {
                     (net.minecraft.client.Minecraft) mc);
         } catch (Throwable t) {
             return new com.google.gson.JsonObject();
+        }
+    }
+
+    /**
+     * v26.2 death awareness: respawn the dead player. Reflective across versions —
+     * {@code LocalPlayer.respawn()} exists under the same official name on every supported
+     * MC version (1.20.1 → 26.2). Also closes the death screen afterwards
+     * ({@code setScreenAndShow(null)} on 26.x, {@code setScreen(null)} on older).
+     * Must be called on the client thread. Returns true when the respawn was dispatched.
+     */
+    default boolean respawn() {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            Object player = mc.getClass().getField("player").get(mc);
+            if (player == null) {
+                return false;
+            }
+            player.getClass().getMethod("respawn").invoke(player);
+            closeScreen(mc);
+            return true;
+        } catch (Throwable t) {
+            log("[Despotes] respawn failed: " + t);
+            return false;
+        }
+    }
+
+    /** v26.2 death awareness: true when the death screen is currently open. */
+    default boolean deathScreenOpen() {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            Object screen = currentScreen(mc);
+            if (screen == null) {
+                return false;
+            }
+            Class<?> death = Class.forName("net.minecraft.client.gui.screens.DeathScreen");
+            return death.isInstance(screen);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Current open screen object via the gui helper, or null. Reflective across versions. */
+    private static Object currentScreen(Object mc) {
+        try {
+            // 26.x: mc.gui.screen() ; older: mc.screen field
+            Object gui = mc.getClass().getField("gui").get(mc);
+            return gui.getClass().getMethod("screen").invoke(gui);
+        } catch (Throwable t) {
+            try {
+                return mc.getClass().getField("screen").get(mc);
+            } catch (Throwable t2) {
+                return null;
+            }
+        }
+    }
+
+    /** Close the current screen (null target) reflectively across versions. */
+    private static void closeScreen(Object mc) {
+        try {
+            // 26.x renamed setScreen -> setScreenAndShow
+            try {
+                mc.getClass().getMethod("setScreenAndShow",
+                        Class.forName("net.minecraft.client.gui.screens.Screen")).invoke(mc, (Object) null);
+            } catch (NoSuchMethodException e) {
+                mc.getClass().getMethod("setScreen",
+                        Class.forName("net.minecraft.client.gui.screens.Screen")).invoke(mc, (Object) null);
+            }
+        } catch (Throwable ignored) {
         }
     }
 }

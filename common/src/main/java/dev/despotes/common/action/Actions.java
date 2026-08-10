@@ -71,6 +71,8 @@ public final class Actions {
                 return Result.ok(ctx.despotes().platform().probeContainer());
             case "hotbar":
                 return doHotbar(ctx, cmd);
+            case "respawn":
+                return doRespawn(ctx);
             case "ai":
                 return doAi(ctx, cmd);
             case "pending":
@@ -144,7 +146,7 @@ public final class Actions {
         switch (target) {
             case "chat": {
                 if (text.startsWith("/")) {
-                    p.sendChat(text);
+                    p.sendCommand(text);
                 } else {
                     p.openChat();
                     p.injectChars(text);
@@ -157,7 +159,7 @@ public final class Actions {
                 break;
             }
             case "command":
-                p.sendChat(text.startsWith("/") ? text : "/" + text);
+                p.sendCommand(text);
                 break;
             case "focused":
                 ctx.requireScreen();
@@ -194,7 +196,7 @@ public final class Actions {
         boolean submit = Json.getBool(cmd, "submit", true);
         String via;
         if (text.startsWith("/")) {
-            p.sendChat(text);
+            p.sendCommand(text);
             via = "command";
             submit = true;
         } else {
@@ -357,6 +359,29 @@ public final class Actions {
         JsonObject res = new JsonObject();
         res.addProperty("executed", "hotbar");
         res.addProperty("slot", slot);
+        return Result.ok(res);
+    }
+
+    /**
+     * v26.2 death awareness: respawn a dead player. Requires the player to be dead; the
+     * platform sends the vanilla respawn packet and closes the death screen. Works while
+     * the death screen is open (the normal case).
+     */
+    private static Result doRespawn(ActionContext ctx) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        var player = p.player();
+        if (player == null) {
+            throw ProtocolError.notInGame();
+        }
+        if (!player.dead()) {
+            throw ProtocolError.badRequest("player is not dead; respawn only applies when dead");
+        }
+        boolean sent = p.respawn();
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "respawn");
+        res.addProperty("dispatched", sent);
+        res.addProperty("deathScreenOpen", p.deathScreenOpen());
         return Result.ok(res);
     }
 
@@ -627,6 +652,9 @@ public final class Actions {
         }
         res.addProperty("open", true);
         res.addProperty("title", screen.title());
+        if (p.deathScreenOpen()) {
+            res.addProperty("kind", "death");
+        }
         res.addProperty("width", screen.width());
         res.addProperty("height", screen.height());
         res.add("widgets", screen.widgetTree(4));
