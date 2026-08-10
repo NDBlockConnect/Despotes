@@ -86,6 +86,8 @@ public final class DespotesConfig {
         public boolean requireToken = false;
         public String token = "";
         public final List<String> allowSources = new ArrayList<>();
+        /** API keys (Alpha.6). When non-empty, every request must carry one (X-Despotes-Key). */
+        public final List<String> apiKeys = new ArrayList<>();
     }
 
     public static final class Capture {
@@ -197,6 +199,8 @@ public final class DespotesConfig {
         this.security.token = o.security.token;
         this.security.allowSources.clear();
         this.security.allowSources.addAll(o.security.allowSources);
+        this.security.apiKeys.clear();
+        this.security.apiKeys.addAll(o.security.apiKeys);
         this.capture.dir = o.capture.dir;
         this.capture.format = o.capture.format;
         this.capture.jpgQuality = o.capture.jpgQuality;
@@ -270,6 +274,12 @@ public final class DespotesConfig {
                 security.allowSources.clear();
                 for (JsonElement e : o.getAsJsonArray("allowSources")) {
                     security.allowSources.add(e.getAsString());
+                }
+            }
+            if (o.has("apiKeys") && o.get("apiKeys").isJsonArray()) {
+                security.apiKeys.clear();
+                for (JsonElement e : o.getAsJsonArray("apiKeys")) {
+                    security.apiKeys.add(e.getAsString());
                 }
             }
         }
@@ -360,6 +370,9 @@ public final class DespotesConfig {
         JsonArray allow = new JsonArray();
         security.allowSources.forEach(allow::add);
         sec.add("allowSources", allow);
+        JsonArray keys = new JsonArray();
+        security.apiKeys.forEach(keys::add);
+        sec.add("apiKeys", keys);
         root.add("security", sec);
 
         JsonObject cap = new JsonObject();

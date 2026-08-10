@@ -53,6 +53,13 @@ public final class SecurityGate {
                 throw ProtocolError.forbidden("missing or invalid token");
             }
         }
+        // API keys (Alpha.6): when configured, every request must present one of them.
+        List<String> keys = despotes.config().security.apiKeys;
+        if (!keys.isEmpty()) {
+            if (token == null || !keys.contains(token)) {
+                throw ProtocolError.forbidden("missing or invalid API key");
+            }
+        }
     }
 
     /**
