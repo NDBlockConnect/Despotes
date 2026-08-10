@@ -50,6 +50,15 @@ public final class DespotesTransformer implements ClassFileTransformer {
         if (className == null) {
             return null;
         }
+        // Loader-mixing guard: only weave when the target class is being defined by the very
+        // classloader that loaded our hook classes (the application classloader, where the
+        // agent jar lives). Under a mod loader (fabric Knot / Forge) the game classes are
+        // defined by a different classloader that cannot expose our hooks to the game, so
+        // weaving would throw NoClassDefFoundError in the game loop. In that case we stand
+        // by and let the mod artifacts own the process.
+        if (loader != DespotesHooks.class.getClassLoader()) {
+            return null;
+        }
         try {
             if (MINECRAFT.equals(className)) {
                 System.out.println("[Despotes] ASM: instrumenting Minecraft.tick ...");
@@ -85,9 +94,12 @@ public final class DespotesTransformer implements ClassFileTransformer {
                         @Override
                         protected void onMethodExit(int opcode) {
                             if (opcode != ATHROW) {
+                                // Push 'this' (the Minecraft instance) so the hook can probe
+                                // the game's own classloader for a mod-owned core.
+                                mv.visitVarInsn(Opcodes.ALOAD, 0);
                                 mv.visitMethodInsn(Opcodes.INVOKESTATIC,
                                         "dev/despotes/vanilla/DespotesHooks",
-                                        "onClientTick", "()V", false);
+                                        "onClientTick", "(Ljava/lang/Object;)V", false);
                             }
                         }
                     };

@@ -11,21 +11,26 @@ import java.util.concurrent.TimeUnit;
  * Premain entrypoint for the Minecraft-native loader line.
  *
  * <p>v26.2-Alpha.3 — ASM dynamic instrumentation. On top of the legacy poll pump the agent
- * now registers {@link DespotesTransformer}, which weaves two hooks at class-load time:
+ * registers {@link DespotesTransformer}, which weaves hooks at class-load time:
  *
  * <ul>
  *   <li>{@code Minecraft.tick()} → {@link DespotesHooks#onClientTick()}: the control core is
  *       driven directly from the game's own tick loop (exact 1:1 alignment, zero scheduler
  *       latency). Once the hook fires the pump below suspends itself.</li>
- *   <li>{@code ClientPacketListener.handleSystemChat/handlePlayerChat} → chat and system
- *       messages are published onto the {@code /events} stream, closing the perception gap
- *       the native line had versus the fabric line.</li>
+ *   <li>{@code ClientPacketListener.handleSystemChat/handlePlayerChat/handleDisguisedChat} →
+ *       chat and system messages are published onto the {@code /events} stream.</li>
  * </ul>
+ *
+ * <p>v26.2-Alpha.4 — JavaAgent For All (loader mixing). The agent jar may be attached to a
+ * process that ALSO runs a mod loader (fabric / neoforge / forge / aprism) with the matching
+ * Despotes mod installed. In that case the agent detects the loader-owned control core and
+ * drops into companion mode: it never boots a second instance, never drives a second tick
+ * loop, and keeps its own event publishing silent — the mod line remains the single owner.
+ * This makes the native agent jar safe to attach alongside any loader artifact.
  *
  * <p>The pump remains as a fallback so the agent still works if instrumentation is skipped
  * (e.g. a future version renames the targets). The agent jar carries the ASM classes inside
- * (see the shadow configuration) and is attached with
- * {@code -javaagent:Despotes-...-native-26.2.jar}.
+ * and is attached with {@code -javaagent:Despotes-...-native-*.jar}.
  */
 public final class DespotesAgent {
 
@@ -68,6 +73,15 @@ public final class DespotesAgent {
         try {
             if (DespotesHooks.hookActive()) {
                 // The ASM tick hook already drives the core at exact tick rate.
+                return;
+            }
+            if (DespotesHooks.companionLoader() != null) {
+                // Companion mode: a mod loader owns the core and drives it itself.
+                return;
+            }
+            Despotes existing = Despotes.get();
+            if (existing != null && !"native".equals(existing.platform().loaderId())) {
+                // Companion mode: a mod loader owns the core and drives it itself.
                 return;
             }
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();

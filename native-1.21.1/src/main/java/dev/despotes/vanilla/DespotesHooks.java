@@ -6,14 +6,29 @@ import dev.despotes.common.Despotes;
 import java.lang.reflect.Method;
 
 /**
- * Static targets of the ASM instrumentation (v26.2-Alpha.3). The instrumented bytecode in
- * {@link DespotesTransformer} calls these methods; everything here must be defensive —
- * an exception escaping into the game's tick or packet path would crash the client.
+ * Static targets of the ASM instrumentation (v26.2-Alpha.3, loader-aware in Alpha.4). The
+ * instrumented bytecode in {@link DespotesTransformer} calls these methods; everything here
+ * must be defensive — an exception escaping into the game's tick or packet path would crash
+ * the client.
+ *
+ * <p>v26.2-Alpha.4 — JavaAgent For All (loader mixing). When the agent jar is attached to a
+ * process that ALSO runs a mod loader (fabric / neoforge / forge / aprism) with the matching
+ * Despotes mod installed, the mod line's {@code Despotes} class lives in the mod loader's
+ * classloader — a <em>different class</em> from the agent's. {@link #probeOwnership(Object)}
+ * resolves this through the game's own classloader so both the tick hook and the legacy pump
+ * know who owns the control core and never double-drive.
  */
 public final class DespotesHooks {
 
-    /** Set once the tick hook fires; the legacy pump stops double-driving. */
+    /** Ownership verdicts from {@link #probeOwnership(Object)}. */
+    public static final String OWNER_NATIVE = "native";
+    /** A mod loader owns the core; the agent must stand by. */
+    public static final String OWNER_FOREIGN = "foreign";
+
+    /** Set once the ASM tick hook drives the core (native mode only). */
     private static volatile boolean hookActive;
+    /** The loader id that owns the core in companion mode, e.g. "fabric". */
+    private static volatile String companionLoader;
     private static volatile boolean announced;
 
     private DespotesHooks() {
@@ -24,9 +39,70 @@ public final class DespotesHooks {
         return hookActive;
     }
 
-    /** Instrumented at every normal exit of {@code Minecraft.tick()V}. Runs on the client thread. */
-    public static void onClientTick() {
+    /** Non-null when a mod loader owns the core and the agent stands by. */
+    public static String companionLoader() {
+        return companionLoader;
+    }
+
+    /**
+     * Resolve who owns the Despotes control core from the game's viewpoint.
+     *
+     * @param mc the live Minecraft instance (its classloader is the game's)
+     * @return {@link #OWNER_NATIVE} when the agent may own and drive the core;
+     *         {@link #OWNER_FOREIGN} when a foreign classloader owns the game and no mod
+     *         core is present (agent must not boot); a mod loader id ("fabric", ...) when
+     *         a mod copy already booted the core; {@code null} when a mod copy exists but
+     *         has not booted yet (caller should wait and re-probe).
+     */
+    public static String probeOwnership(Object mc) {
         try {
+            ClassLoader gameCl = mc.getClass().getClassLoader();
+            Class<?> despotesClass = Class.forName("dev.despotes.common.Despotes", false, gameCl);
+            if (despotesClass == Despotes.class) {
+                // Same class object: the game runs in the agent's own classloader — no mod copy.
+                return OWNER_NATIVE;
+            }
+            Object core = despotesClass.getMethod("get").invoke(null);
+            if (core == null) {
+                // A mod copy exists but has not booted yet.
+                return null;
+            }
+            Object platform = core.getClass().getMethod("platform").invoke(core);
+            String id = String.valueOf(platform.getClass().getMethod("loaderId").invoke(platform));
+            return "native".equals(id) ? OWNER_NATIVE : id;
+        } catch (ClassNotFoundException e) {
+            // The game's classloader cannot see any Despotes core. If the game class itself
+            // lives in our classloader we may own it; otherwise a foreign loader (e.g. Knot
+            // without the mod) owns the game and we must not boot direct-reference code.
+            try {
+                return mc.getClass().getClassLoader() == Despotes.class.getClassLoader()
+                        ? OWNER_NATIVE : OWNER_FOREIGN;
+            } catch (Throwable t) {
+                return OWNER_FOREIGN;
+            }
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Instrumented at every normal exit of {@code Minecraft.tick()V}. Runs on the client thread. */
+    public static void onClientTick(Object mc) {
+        try {
+            if (companionLoader == null) {
+                String owner = probeOwnership(mc);
+                if (owner != null && !OWNER_NATIVE.equals(owner)) {
+                    companionLoader = owner;
+                    if (!announced) {
+                        announced = true;
+                        System.out.println("[Despotes] agent companion mode — '"
+                                + owner + "' owns the control core; agent stands by.");
+                    }
+                    return;
+                }
+            }
+            if (companionLoader != null) {
+                return;
+            }
             hookActive = true;
             Despotes d = Despotes.get();
             if (d == null) {
@@ -43,13 +119,19 @@ public final class DespotesHooks {
         }
     }
 
+    /** Publish chat/system events only when the agent owns the core (native mode). */
+    private static boolean shouldPublish() {
+        Despotes d = Despotes.get();
+        return d != null && "native".equals(d.platform().loaderId());
+    }
+
     /** Instrumented at entry of {@code ClientPacketListener.handleSystemChat}. */
     public static void onSystemChat(Object packet) {
         try {
-            Despotes d = Despotes.get();
-            if (d == null || packet == null) {
+            if (!shouldPublish() || companionLoader != null) {
                 return;
             }
+            Despotes d = Despotes.get();
             Object content = call(packet, "content");
             boolean overlay = callBool(packet, "overlay");
             JsonObject payload = new JsonObject();
@@ -64,10 +146,10 @@ public final class DespotesHooks {
     /** Instrumented at entry of {@code ClientPacketListener.handlePlayerChat}. */
     public static void onPlayerChat(Object packet) {
         try {
-            Despotes d = Despotes.get();
-            if (d == null || packet == null) {
+            if (!shouldPublish() || companionLoader != null) {
                 return;
             }
+            Despotes d = Despotes.get();
             String message = "";
             Object body = call(packet, "body");
             if (body != null) {
@@ -92,10 +174,10 @@ public final class DespotesHooks {
      */
     public static void onDisguisedChat(Object packet) {
         try {
-            Despotes d = Despotes.get();
-            if (d == null || packet == null) {
+            if (!shouldPublish() || companionLoader != null) {
                 return;
             }
+            Despotes d = Despotes.get();
             JsonObject payload = new JsonObject();
             // The disguised chat packet is a record: the accessor is message(), not content().
             payload.addProperty("message", text(call(packet, "message")));
