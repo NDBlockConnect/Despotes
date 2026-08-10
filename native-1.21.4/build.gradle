@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
 }
 
-version = mod_version + '-native-1.21.1'
+version = mod_version + '-native-1.21.4'
 group = mod_group_id
 
 base {
@@ -13,11 +13,14 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
-def mcClient = file("C:/Users/Sails/AppData/Local/mdl/versions/1.21.1/1.21.1.jar")
+def mcClient = file("C:/Users/Sails/Documents/Workspace/NormalWorkspace/Coding/Minecraft/Despotes/fabric-1.21.4/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-d1fae903ae/1.21.4-loom.mappings.1_21_4.layered+hash.2198-v2/minecraft-merged-d1fae903ae-1.21.4-loom.mappings.1_21_4.layered+hash.2198-v2.jar")
 
 dependencies {
     compileOnly files(mcClient)
-    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
+    compileOnly fileTree(dir: "C:/Users/Sails/Documents/Workspace/NormalWorkspace/Coding/Minecraft/Despotes/fabric-1.21.4/.gradle/loom-cache/remapped_mods/loom_mappings_1_21_4_layered_hash_2198_v2", include: "**/*.jar")
+    compileOnly "com.mojang:datafixerupper:8.0.16"
+    compileOnly "com.mojang:brigadier:1.3.10"
+    compileOnly "it.unimi.dsi:fastutil:8.5.12"
     compileOnly "com.google.code.gson:gson:2.11.0"
     compileOnly "org.jetbrains:annotations:24.0.1"
     compileOnly "org.lwjgl:lwjgl-glfw:3.3.3"
@@ -39,7 +42,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 jar {
-    archiveVersion = mod_version + '-native-1.21.1'
+    archiveVersion = mod_version + '-native-1.21.4'
     manifest {
         attributes([
             'Premain-Class'       : 'dev.despotes.vanilla.DespotesAgent',

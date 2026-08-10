@@ -21,7 +21,10 @@ public final class DespotesForgeLegacyClient {
                 ForgeGuiOverlay.draw(d, e.getGuiGraphics());
             }
         });
-        MinecraftForge.EVENT_BUS.addListener((TickEvent.ClientTickEvent.Post e) -> {
+        MinecraftForge.EVENT_BUS.addListener((TickEvent.ClientTickEvent e) -> {
+            if (e.phase != TickEvent.Phase.END) {
+                return;
+            }
             Despotes d = bootOnce();
             if (d != null) {
                 d.clientTick();
