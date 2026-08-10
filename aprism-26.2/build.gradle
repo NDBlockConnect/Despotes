@@ -45,6 +45,8 @@ tasks.register('packageAje', Zip) {
     archiveVersion = mod_version + '-aprism-26.2'
     from("src/main/resources") {
         include 'aprism.manifest.json'
+        // v26.2-Alpha.5: stamp the manifest version from mod_semver at packaging time.
+        expand(aprism_version: mod_semver)
     }
     from(jar.archiveFile) {
         rename { "despotes.jar" }
