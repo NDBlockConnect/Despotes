@@ -149,6 +149,41 @@ public final class WorldProbes {
         return o;
     }
 
+    /** Open container (screen menu) snapshot: slots with item + count. */
+    public static com.google.gson.JsonObject container(net.minecraft.client.Minecraft mc) {
+        com.google.gson.JsonObject o = new com.google.gson.JsonObject();
+        var menu = mc.player == null ? null : mc.player.containerMenu;
+        if (menu == null) {
+            o.addProperty("open", false);
+            return o;
+        }
+        o.addProperty("open", true);
+        try {
+            Object title = menu.getClass().getMethod("getTitle").invoke(menu);
+            o.addProperty("title", String.valueOf(
+                    title.getClass().getMethod("getString").invoke(title)));
+        } catch (Throwable t) {
+        }
+        com.google.gson.JsonArray arr = new com.google.gson.JsonArray();
+        int i = 0;
+        for (var slot : menu.slots) {
+            var stack = slot.getItem();
+            if (stack == null || stack.isEmpty()) {
+                i++;
+                continue;
+            }
+            com.google.gson.JsonObject j = new com.google.gson.JsonObject();
+            j.addProperty("slot", i);
+            j.addProperty("item", String.valueOf(
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem())));
+            j.addProperty("count", stack.getCount());
+            arr.add(j);
+            i++;
+        }
+        o.add("slots", arr);
+        return o;
+    }
+
     private static Long callLong(Object o, String method) {
         try {
             Method m = o.getClass().getMethod(method);
