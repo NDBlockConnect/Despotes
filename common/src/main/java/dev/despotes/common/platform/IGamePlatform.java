@@ -100,8 +100,24 @@ public interface IGamePlatform {
     default void setRotation(float yaw, float pitch) {
     }
 
-    /** Select a hotbar slot (0-8). */
+    /** Select a hotbar slot (0-8). Reflective across versions. */
     default void selectHotbarSlot(int slot) {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            Object player = mc.getClass().getField("player").get(mc);
+            if (player == null) {
+                return;
+            }
+            Object inv = player.getClass().getMethod("getInventory").invoke(player);
+            try {
+                inv.getClass().getMethod("setSelectedSlot", int.class).invoke(inv, slot);
+            } catch (NoSuchMethodException e) {
+                java.lang.reflect.Field f = inv.getClass().getField("selected");
+                f.setInt(inv, slot);
+            }
+        } catch (Throwable ignored) {
+        }
     }
 
     /** World interactions. */
@@ -184,5 +200,17 @@ public interface IGamePlatform {
     /** What the crosshair currently targets (block or entity) with distance. */
     default com.google.gson.JsonObject probeTarget() {
         return new com.google.gson.JsonObject();
+    }
+
+    /** Open container menu snapshot (slots + counts). Reflective MC access. */
+    default com.google.gson.JsonObject probeContainer() {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.container(
+                    (net.minecraft.client.Minecraft) mc);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
     }
 }

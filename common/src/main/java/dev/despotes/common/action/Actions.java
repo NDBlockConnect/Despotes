@@ -65,6 +65,10 @@ public final class Actions {
                         .probeEntities(Json.getDouble(cmd, "radius", 8)));
             case "target":
                 return Result.ok(ctx.despotes().platform().probeTarget());
+            case "container":
+                return Result.ok(ctx.despotes().platform().probeContainer());
+            case "hotbar":
+                return doHotbar(ctx, cmd);
             case "pending":
                 return doPending(ctx);
             case "config-reload":
@@ -242,6 +246,19 @@ public final class Actions {
     }
 
     // ---- function (semantic keys, issue 4) ----
+
+    private static Result doHotbar(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        int slot = Json.getInt(cmd, "slot", 0);
+        if (slot < 0 || slot > 8) {
+            throw ProtocolError.badRequest("slot must be 0-8");
+        }
+        p.selectHotbarSlot(slot);
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "hotbar");
+        res.addProperty("slot", slot);
+        return Result.ok(res);
+    }
 
     private static Result doFunction(ActionContext ctx, JsonObject cmd) {
         IGamePlatform p = ctx.despotes().platform();
