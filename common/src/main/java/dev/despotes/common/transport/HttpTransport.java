@@ -99,7 +99,10 @@ public final class HttpTransport implements ControlTransport {
     }
 
     private String peerToken(HttpExchange ex) {
-        String h = ex.getRequestHeaders().getFirst("X-Despotes-Token");
+        String h = ex.getRequestHeaders().getFirst("X-Despotes-Key");
+        if (h == null) {
+            h = ex.getRequestHeaders().getFirst("X-Despotes-Token");
+        }
         return h;
     }
 
