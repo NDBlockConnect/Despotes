@@ -49,6 +49,7 @@ public final class HttpTransport implements ControlTransport {
             server.createContext("/despotes/v1/oplog", this::handleOplog);
             server.createContext("/despotes/v1/cancel", this::handleCancel);
             server.createContext("/despotes/v1/config/reload", this::handleReload);
+            server.createContext("/despotes/v1/assistant", this::handleAssistant);
             server.start();
             despotes.platform().log("[Despotes] HTTP transport listening on " + host + ":" + port);
         } catch (IOException e) {
@@ -96,6 +97,79 @@ public final class HttpTransport implements ControlTransport {
 
     private void sendJson(HttpExchange ex, int status, String json) {
         send(ex, status, "application/json; charset=utf-8", json.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Conversational assistant (Alpha.8): LLM may reply and/or execute actions. */
+    private void handleAssistant(HttpExchange ex) {
+        if (!"POST".equalsIgnoreCase(ex.getRequestMethod())) {
+            sendJson(ex, 405, Json.error(null, new dev.despotes.common.protocol.ProtocolError(
+                    dev.despotes.common.protocol.ProtocolError.Code.BAD_REQUEST, "POST required")));
+            return;
+        }
+        String requestId = "";
+        try {
+            String token = peerToken(ex);
+            JsonObject req = Json.parseCommand(readBody(ex));
+            requestId = Json.getStr(req, "requestId", "");
+            gate.checkPeer(ex.getRemoteAddress(), token);
+            var cfg = despotes.config().ai;
+            if (!cfg.enabled) {
+                sendJson(ex, 200, Json.error(requestId,
+                        dev.despotes.common.protocol.ProtocolError.forbidden("ai is disabled")));
+                return;
+            }
+            String message = Json.getStr(req, "message", "");
+            String world = despotes.platform().awaitOnClientThread(() -> {
+                var p = despotes.platform();
+                JsonObject o = p.probeWorld();
+                if (p.player() != null) o.add("player", p.player().statusJson());
+                return o.toString();
+            }, 3000);
+            String system = "You are Despotes, an assistant controlling a Minecraft player via "
+                    + "JSON action commands. Reply in JSON: {\"reply\": \"text\", "
+                    + "\"actions\": [action objects]}. Allowed actions: key/move/look/click/"
+                    + "use/function/hotbar. Be brief.";
+            String raw;
+            try {
+                raw = dev.despotes.common.ai.AiClient.chat(cfg, system,
+                        "World state: " + world + " Message: " + message);
+            } catch (Exception e) {
+                sendJson(ex, 200, Json.error(requestId,
+                        dev.despotes.common.protocol.ProtocolError.internal("AI failed: " + e.getMessage())));
+                return;
+            }
+            JsonObject out = new JsonObject();
+            JsonObject parsed;
+            try {
+                parsed = com.google.gson.JsonParser.parseString(raw.trim()).getAsJsonObject();
+            } catch (Exception e) {
+                parsed = new JsonObject();
+                parsed.addProperty("reply", raw);
+            }
+            out.addProperty("reply", Json.getStr(parsed, "reply", ""));
+            com.google.gson.JsonArray results = new com.google.gson.JsonArray();
+            if (parsed.has("actions") && parsed.get("actions").isJsonArray()) {
+                int n = 0;
+                for (var el : parsed.getAsJsonArray("actions")) {
+                    if (n++ >= Math.max(1, cfg.maxActions)) break;
+                    if (!el.isJsonObject()) continue;
+                    JsonObject a = el.getAsJsonObject();
+                    String type = Json.normalize(Json.getStr(a, "type", ""));
+                    if (!java.util.Set.of("key", "move", "look", "click", "use", "function", "hotbar")
+                            .contains(type)) continue;
+                    dev.despotes.common.protocol.Result r = dev.despotes.common.action.Actions.execute(
+                            new dev.despotes.common.action.ActionContext(despotes, requestId, "assistant", "assistant"), a);
+                    results.add(com.google.gson.JsonParser.parseString(r.toJsonString(requestId)));
+                }
+            }
+            out.add("results", results);
+            sendJson(ex, 200, Json.ok(requestId, out));
+        } catch (dev.despotes.common.protocol.ProtocolError e) {
+            sendJson(ex, 403, Json.error(requestId, e));
+        } catch (Exception e) {
+            sendJson(ex, 500, Json.error(requestId,
+                    dev.despotes.common.protocol.ProtocolError.internal(String.valueOf(e.getMessage()))));
+        }
     }
 
     private String peerToken(HttpExchange ex) {
