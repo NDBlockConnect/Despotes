@@ -19,6 +19,9 @@ import dev.despotes.common.platform.PlayerHandle;
  * current snapshot is embedded in {@code /status} as {@code lifecycle}, so an agent can
  * both poll and observe. Death detection is data-level ({@link PlayerHandle#dead()}),
  * independent of which screen is open.
+ *
+ * <p>v26.2-Alpha.2: while playing, a health drop publishes a {@code damage} event
+ * (amount, remaining health) so agents can react to combat without polling.
  */
 public final class LifeCycleMonitor {
 
@@ -32,6 +35,7 @@ public final class LifeCycleMonitor {
     private int deathCount;
     private long lastDeathMs;
     private long lastRespawnMs;
+    private float lastHealth = Float.NaN;
 
     public LifeCycleMonitor(Despotes despotes) {
         this.despotes = despotes;
@@ -52,11 +56,31 @@ public final class LifeCycleMonitor {
         }
 
         if (observed == state) {
+            if (state == State.PLAYING && player != null) {
+                checkDamage(player);
+            }
             return;
         }
         State previous = state;
         state = observed;
+        lastHealth = Float.NaN;
         publishTransition(previous, observed, player);
+    }
+
+    /** Publish a damage event when health drops while playing. */
+    private void checkDamage(PlayerHandle player) {
+        float health = player.health();
+        if (!Float.isNaN(lastHealth) && health < lastHealth) {
+            JsonObject payload = new JsonObject();
+            payload.addProperty("amount", Math.round((lastHealth - health) * 10) / 10.0);
+            payload.addProperty("health", health);
+            payload.addProperty("x", player.x());
+            payload.addProperty("y", player.y());
+            payload.addProperty("z", player.z());
+            payload.addProperty("dimension", player.dimension());
+            despotes.eventBus().publish("damage", payload);
+        }
+        lastHealth = health;
     }
 
     private void publishTransition(State from, State to, PlayerHandle player) {

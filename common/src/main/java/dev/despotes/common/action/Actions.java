@@ -58,6 +58,11 @@ public final class Actions {
                 return doScreenQuery(ctx);
             case "inventory":
                 return doInventoryQuery(ctx);
+            case "self":
+                return Result.ok(ctx.despotes().platform().probeSelf());
+            case "threats":
+                return Result.ok(ctx.despotes().platform()
+                        .probeThreats(Json.getDouble(cmd, "radius", 12)));
             case "world":
                 return Result.ok(ctx.despotes().platform().probeWorld());
             case "blocks":

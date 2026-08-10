@@ -228,6 +228,30 @@ public interface IGamePlatform {
         return new com.google.gson.JsonObject();
     }
 
+    /** v26.2-Alpha.2 extended self vitals: food/armor/air, state flags, motion, effects, environment. */
+    default com.google.gson.JsonObject probeSelf() {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.self(
+                    (net.minecraft.client.Minecraft) mc);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
+    /** v26.2-Alpha.2 threat awareness: hostile mobs + projectiles within radius. */
+    default com.google.gson.JsonObject probeThreats(double radius) {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.threats(
+                    (net.minecraft.client.Minecraft) mc, radius);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
     /** Open container menu snapshot (slots + counts). Reflective MC access. */
     default com.google.gson.JsonObject probeContainer() {
         try {
