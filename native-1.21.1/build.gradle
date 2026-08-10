@@ -14,6 +14,7 @@ java {
 }
 
 def mcClient = file("C:/Users/Sails/AppData/Local/mdl/versions/1.21.1/1.21.1.jar")
+def asmDir = file("C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm")
 
 dependencies {
     compileOnly files(mcClient)
@@ -22,6 +23,11 @@ dependencies {
     compileOnly "org.jetbrains:annotations:24.0.1"
     compileOnly "org.lwjgl:lwjgl-glfw:3.3.3"
     compileOnly "com.google.code.findbugs:jsr305:3.0.2"
+    // v26.2-Alpha.3: ASM for dynamic instrumentation, embedded into the agent jar.
+    implementation files(
+            file("$asmDir/asm/9.10.1/asm-9.10.1.jar"),
+            file("$asmDir/asm-tree/9.10.1/asm-tree-9.10.1.jar"),
+            file("$asmDir/asm-commons/9.10.1/asm-commons-9.10.1.jar"))
 }
 
 sourceSets {
@@ -40,12 +46,20 @@ tasks.withType(JavaCompile).configureEach {
 
 jar {
     archiveVersion = mod_version + '-native-1.21.1'
-    manifest {
+        manifest {
         attributes([
             'Premain-Class'       : 'dev.despotes.vanilla.DespotesAgent',
             'Agent-Class'         : 'dev.despotes.vanilla.DespotesAgent',
+            'Can-Retransform-Classes' : 'true',
             'Specification-Title' : mod_id,
             'Implementation-Version' : mod_semver
         ])
     }
+    // v26.2-Alpha.3: embed ASM classes so the agent jar is self-contained.
+    from {
+        configurations.runtimeClasspath.filter { it.name.startsWith('asm') }.collect {
+            zipTree(it).matching { exclude 'META-INF/**' }
+        }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
