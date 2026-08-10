@@ -3,6 +3,7 @@ package dev.despotes.common;
 import com.google.gson.JsonObject;
 import dev.despotes.common.config.DespotesConfig;
 import dev.despotes.common.dispatcher.Dispatcher;
+import dev.despotes.common.events.EventBus;
 import dev.despotes.common.focus.FocusManager;
 import dev.despotes.common.look.LookSmoother;
 import dev.despotes.common.platform.IGamePlatform;
@@ -27,7 +28,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.1-Alpha.8";
+    public static final String VERSION = "v26.1-Alpha.9";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -38,6 +39,7 @@ public final class Despotes {
     private final FocusManager focusManager;
     private final LookSmoother lookSmoother;
     private final OpLog opLog;
+    private final EventBus eventBus = new EventBus();
     private final Overlay overlay;
     private final List<ControlTransport> transports = new ArrayList<>();
     private final Path configPath;
@@ -155,6 +157,10 @@ public final class Despotes {
 
     public OpLog opLog() {
         return opLog;
+    }
+
+    public EventBus eventBus() {
+        return eventBus;
     }
 
     public Overlay overlay() {

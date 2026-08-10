@@ -35,6 +35,8 @@ public final class Actions {
                 return doKey(ctx, cmd);
             case "type":
                 return doType(ctx, cmd);
+            case "chat":
+                return doChat(ctx, cmd);
             case "move":
                 return doMove(ctx, cmd);
             case "look":
@@ -173,6 +175,43 @@ public final class Actions {
         res.addProperty("executed", "type");
         res.addProperty("target", target);
         res.addProperty("chars", text.length());
+        return Result.ok(res);
+    }
+
+    // ---- chat ----
+
+    /**
+     * Alpha.9: direct chat helper. Commands (text starting with '/') go straight through
+     * sendChat; plain text opens the chat screen, injects characters and submits.
+     * Simpler than "type" for the common conversational case.
+     */
+    private static Result doChat(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        String text = Json.getStr(cmd, "text", "");
+        if (text.isEmpty()) {
+            throw ProtocolError.badRequest("'text' is required");
+        }
+        boolean submit = Json.getBool(cmd, "submit", true);
+        String via;
+        if (text.startsWith("/")) {
+            p.sendChat(text);
+            via = "command";
+            submit = true;
+        } else {
+            p.openChat();
+            p.injectChars(text);
+            if (submit) {
+                p.injectKey("key.keyboard.enter", true);
+                ctx.despotes().dispatcher().scheduleInTicks(2,
+                        () -> p.injectKey("key.keyboard.enter", false));
+            }
+            via = "chat_screen";
+        }
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "chat");
+        res.addProperty("via", via);
+        res.addProperty("chars", text.length());
+        res.addProperty("submitted", submit);
         return Result.ok(res);
     }
 
