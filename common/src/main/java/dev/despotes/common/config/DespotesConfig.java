@@ -43,6 +43,8 @@ public final class DespotesConfig {
     public final Movement movement = new Movement();
     // focus
     public final Focus focus = new Focus();
+    // ai
+    public final Ai ai = new Ai();
     // window
     public final Window window = new Window();
 
@@ -137,6 +139,16 @@ public final class DespotesConfig {
         public boolean returnFocusOnSteal = true;
     }
 
+    /** AI intent translation (Alpha.7). OpenAI-compatible chat-completions endpoint. */
+    public static final class Ai {
+        public boolean enabled = false;
+        public String endpoint = "";
+        public String model = "";
+        public String apiKey = "";
+        public int timeoutMs = 15000;
+        public int maxActions = 20;
+    }
+
     public boolean sourceEnabled(String transport) {
         // If no explicit source entries exist for this transport, fall back to the transport section.
         boolean anyListed = false;
@@ -215,6 +227,12 @@ public final class DespotesConfig {
         this.window.grabFocusOnStart = o.window.grabFocusOnStart;
         this.focus.keepReleasedWhileUnfocused = o.focus.keepReleasedWhileUnfocused;
         this.focus.returnFocusOnSteal = o.focus.returnFocusOnSteal;
+        this.ai.enabled = o.ai.enabled;
+        this.ai.endpoint = o.ai.endpoint;
+        this.ai.model = o.ai.model;
+        this.ai.apiKey = o.ai.apiKey;
+        this.ai.timeoutMs = o.ai.timeoutMs;
+        this.ai.maxActions = o.ai.maxActions;
         this.focus.releaseMouseOnFocusLoss = o.focus.releaseMouseOnFocusLoss;
         this.focus.regrabMouseOnFocusGain = o.focus.regrabMouseOnFocusGain;
         this.focus.preventPauseOnFocusLoss = o.focus.preventPauseOnFocusLoss;
@@ -304,13 +322,18 @@ public final class DespotesConfig {
             window.grabFocusOnStart = bool(o, "grabFocusOnStart", window.grabFocusOnStart);
         }
         if (root.has("focus") && (o = root.getAsJsonObject("focus")) != null) {
-            focus.keepReleasedWhileUnfocused = bool(o, "keepReleasedWhileUnfocused", focus.keepReleasedWhileUnfocused);
-        }
-        if (root.has("focus") && (o = root.getAsJsonObject("focus")) != null) {
             focus.releaseMouseOnFocusLoss = bool(o, "releaseMouseOnFocusLoss", focus.releaseMouseOnFocusLoss);
             focus.regrabMouseOnFocusGain = bool(o, "regrabMouseOnFocusGain", focus.regrabMouseOnFocusGain);
             focus.preventPauseOnFocusLoss = bool(o, "preventPauseOnFocusLoss", focus.preventPauseOnFocusLoss);
             focus.keepReleasedWhileUnfocused = bool(o, "keepReleasedWhileUnfocused", focus.keepReleasedWhileUnfocused);
+        }
+        if (root.has("ai") && (o = root.getAsJsonObject("ai")) != null) {
+            ai.enabled = bool(o, "enabled", ai.enabled);
+            ai.endpoint = str(o, "endpoint", ai.endpoint);
+            ai.model = str(o, "model", ai.model);
+            ai.apiKey = str(o, "apiKey", ai.apiKey);
+            ai.timeoutMs = integer(o, "timeoutMs", ai.timeoutMs);
+            ai.maxActions = integer(o, "maxActions", ai.maxActions);
         }
     }
 
@@ -404,6 +427,15 @@ public final class DespotesConfig {
         fo.addProperty("regrabMouseOnFocusGain", focus.regrabMouseOnFocusGain);
         fo.addProperty("preventPauseOnFocusLoss", focus.preventPauseOnFocusLoss);
         root.add("focus", fo);
+
+        JsonObject aij = new JsonObject();
+        aij.addProperty("enabled", ai.enabled);
+        aij.addProperty("endpoint", ai.endpoint);
+        aij.addProperty("model", ai.model);
+        aij.addProperty("apiKey", ai.apiKey);
+        aij.addProperty("timeoutMs", ai.timeoutMs);
+        aij.addProperty("maxActions", ai.maxActions);
+        root.add("ai", aij);
 
         return root;
     }
