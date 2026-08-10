@@ -69,6 +69,8 @@ public final class Actions {
                 return Result.ok(ctx.despotes().platform().probeContainer());
             case "hotbar":
                 return doHotbar(ctx, cmd);
+            case "ai":
+                return doAi(ctx, cmd);
             case "pending":
                 return doPending(ctx);
             case "config-reload":
@@ -246,6 +248,65 @@ public final class Actions {
     }
 
     // ---- function (semantic keys, issue 4) ----
+
+    // ---- AI intent translation (Alpha.7) ----
+
+    private static final java.util.Set<String> AI_ALLOWED = java.util.Set.of(
+            "key", "move", "look", "click", "use", "function", "hotbar");
+
+    private static Result doAi(ActionContext ctx, JsonObject cmd) {
+        var cfg = ctx.despotes().config().ai;
+        if (!cfg.enabled) {
+            throw ProtocolError.forbidden("ai is disabled (set ai.enabled=true)");
+        }
+        String intent = Json.getStr(cmd, "intent", "");
+        if (intent.isBlank()) {
+            throw ProtocolError.badRequest("'intent' is required");
+        }
+        String world = ctx.despotes().platform().awaitOnClientThread(() -> {
+            var p = ctx.despotes().platform();
+            JsonObject o = p.probeWorld();
+            if (p.player() != null) {
+                o.add("player", p.player().statusJson());
+            }
+            return o.toString();
+        }, 3000);
+        String system = "You control a Minecraft player via JSON action commands. "
+                + "Reply ONLY with a JSON array of action objects using these types: "
+                + "key/move/look/click/use/function/hotbar. No prose, no markdown.";
+        String user = "World state: " + world + " Intent: " + intent;
+        String plan;
+        try {
+            plan = dev.despotes.common.ai.AiClient.chat(cfg, system, user);
+        } catch (Exception e) {
+            throw ProtocolError.internal("AI endpoint failed: " + e.getMessage());
+        }
+        com.google.gson.JsonElement parsed;
+        try {
+            parsed = com.google.gson.JsonParser.parseString(plan.trim());
+        } catch (Exception e) {
+            throw ProtocolError.internal("AI returned non-JSON: " + plan);
+        }
+        if (!parsed.isJsonArray()) {
+            throw ProtocolError.internal("AI must return a JSON array of actions");
+        }
+        int max = Math.max(1, cfg.maxActions);
+        com.google.gson.JsonArray results = new com.google.gson.JsonArray();
+        int n = 0;
+        for (var el : parsed.getAsJsonArray()) {
+            if (n++ >= max) break;
+            if (!el.isJsonObject()) continue;
+            JsonObject a = el.getAsJsonObject();
+            String type = Json.normalize(Json.getStr(a, "type", ""));
+            if (!AI_ALLOWED.contains(type)) continue;
+            Result r = execute(ctx, a);
+            results.add(com.google.gson.JsonParser.parseString(r.toJsonString(ctx.requestId())));
+        }
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "ai");
+        res.add("results", results);
+        return Result.ok(res);
+    }
 
     private static Result doHotbar(ActionContext ctx, JsonObject cmd) {
         IGamePlatform p = ctx.despotes().platform();
