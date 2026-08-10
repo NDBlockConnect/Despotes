@@ -50,6 +50,7 @@ public final class HttpTransport implements ControlTransport {
             server.createContext("/despotes/v1/cancel", this::handleCancel);
             server.createContext("/despotes/v1/config/reload", this::handleReload);
             server.createContext("/despotes/v1/assistant", this::handleAssistant);
+            server.createContext("/despotes/v1/events", this::handleEvents);
             server.start();
             despotes.platform().log("[Despotes] HTTP transport listening on " + host + ":" + port);
         } catch (IOException e) {
@@ -79,6 +80,40 @@ public final class HttpTransport implements ControlTransport {
     private String readBody(HttpExchange ex) throws IOException {
         try (InputStream in = ex.getRequestBody()) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+    /** Alpha.9: poll captured game events (chat/system) since a sequence number. */
+    private void handleEvents(HttpExchange ex) {
+        if (!"GET".equalsIgnoreCase(ex.getRequestMethod())) {
+            sendJson(ex, 405, Json.error(null, ProtocolError.badRequest("GET required")));
+            return;
+        }
+        try {
+            String token = peerToken(ex);
+            gate.checkPeer(ex.getRemoteAddress(), token);
+            long since = 0;
+            String q = ex.getRequestURI().getQuery();
+            if (q != null) {
+                for (String kv : q.split("&")) {
+                    int i = kv.indexOf('=');
+                    if (i > 0 && "since".equals(kv.substring(0, i))) {
+                        try {
+                            since = Long.parseLong(kv.substring(i + 1).trim());
+                        } catch (NumberFormatException e) {
+                            sendJson(ex, 400, Json.error(null,
+                                    ProtocolError.badRequest("'since' must be a number")));
+                            return;
+                        }
+                    }
+                }
+            }
+            var events = despotes.eventBus().since(since);
+            JsonObject result = new JsonObject();
+            result.addProperty("lastSeq", despotes.eventBus().lastSeq());
+            result.add("events", dev.despotes.common.events.EventBus.toJsonArray(events));
+            sendJson(ex, 200, Json.ok("", result));
+        } catch (ProtocolError e) {
+            sendJson(ex, 403, Json.error(null, e));
         }
     }
 
