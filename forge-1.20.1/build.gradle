@@ -24,9 +24,7 @@ base {
     archivesName = 'Despotes'
 }
 
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
-}
+// Build with the JDK 17 that runs Gradle (no toolchain provisioning).
 
 minecraft {
     mappings channel: 'official', version: "${mc_version}"
