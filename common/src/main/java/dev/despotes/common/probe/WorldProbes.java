@@ -16,7 +16,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Data-level world perception (issue 3): block/entity/target/world snapshots read straight
@@ -383,9 +385,27 @@ public final class WorldProbes {
         }
     }
 
+    /**
+     * v26.2-Alpha.6: reflection method cache. {@code getMethod} walks the whole class
+     * hierarchy on every call; the {@code self} probe makes ~20 such lookups per request,
+     * so resolved Method handles are memoized by (class, method-name). Methods are stable
+     * per version, and the cache is bounded by the small number of MC classes involved.
+     */
+    private static final Map<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
+
+    private static Method resolve(Object o, String method) throws NoSuchMethodException {
+        String key = o.getClass().getName() + '#' + method;
+        Method m = METHOD_CACHE.get(key);
+        if (m == null) {
+            m = o.getClass().getMethod(method);
+            METHOD_CACHE.put(key, m);
+        }
+        return m;
+    }
+
     private static Long callLong(Object o, String method) {
         try {
-            Method m = o.getClass().getMethod(method);
+            Method m = resolve(o, method);
             return ((Number) m.invoke(o)).longValue();
         } catch (Throwable t) {
             return null;
@@ -394,7 +414,7 @@ public final class WorldProbes {
 
     private static Object call(Object o, String method) {
         try {
-            return o.getClass().getMethod(method).invoke(o);
+            return resolve(o, method).invoke(o);
         } catch (Throwable t) {
             return null;
         }
@@ -402,7 +422,7 @@ public final class WorldProbes {
 
     private static int callInt(Object o, String method) {
         try {
-            return ((Number) o.getClass().getMethod(method).invoke(o)).intValue();
+            return ((Number) resolve(o, method).invoke(o)).intValue();
         } catch (Throwable t) {
             return -1;
         }
@@ -418,7 +438,7 @@ public final class WorldProbes {
 
     private static float callFloat(Object o, String method) {
         try {
-            return ((Number) o.getClass().getMethod(method).invoke(o)).floatValue();
+            return ((Number) resolve(o, method).invoke(o)).floatValue();
         } catch (Throwable t) {
             return -1f;
         }
@@ -426,7 +446,7 @@ public final class WorldProbes {
 
     private static boolean callBool(Object o, String method) {
         try {
-            Object v = o.getClass().getMethod(method).invoke(o);
+            Object v = resolve(o, method).invoke(o);
             return v instanceof Boolean b && b;
         } catch (Throwable t) {
             return false;

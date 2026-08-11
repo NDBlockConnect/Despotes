@@ -49,6 +49,21 @@ public final class Json {
         return stringify(o);
     }
 
+    /**
+     * v26.2-Alpha.6: success envelope carrying the command's own latency breakdown, so
+     * callers do not need a second /status round-trip to know how long the command waited
+     * in the queue and how long it took to execute.
+     */
+    public static String ok(String requestId, JsonElement result, long waitedUs, long execUs) {
+        JsonObject o = new JsonObject();
+        o.addProperty("requestId", requestId == null ? "" : requestId);
+        o.addProperty("ok", true);
+        o.add("result", result);
+        o.addProperty("waitedMs", Math.round(waitedUs / 100.0) / 10.0);
+        o.addProperty("execMs", Math.round(execUs / 100.0) / 10.0);
+        return stringify(o);
+    }
+
     public static String error(String requestId, ProtocolError err) {
         JsonObject o = new JsonObject();
         o.addProperty("requestId", requestId == null ? "" : requestId);

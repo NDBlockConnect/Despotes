@@ -7,6 +7,7 @@ import dev.despotes.common.events.EventBus;
 import dev.despotes.common.focus.FocusManager;
 import dev.despotes.common.lifecycle.LifeCycleMonitor;
 import dev.despotes.common.look.LookSmoother;
+import dev.despotes.common.perf.LatencyStats;
 import dev.despotes.common.platform.IGamePlatform;
 import dev.despotes.common.transport.CliTransport;
 import dev.despotes.common.transport.ControlTransport;
@@ -29,7 +30,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.2-Alpha.5";
+    public static final String VERSION = "v26.2-Alpha.6";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -43,6 +44,7 @@ public final class Despotes {
     private final EventBus eventBus = new EventBus();
     private final Overlay overlay;
     private final LifeCycleMonitor lifeCycle;
+    private final LatencyStats latency = new LatencyStats();
     private final List<ControlTransport> transports = new ArrayList<>();
     private final Path configPath;
 
@@ -175,6 +177,11 @@ public final class Despotes {
         return lifeCycle;
     }
 
+    /** v26.2-Alpha.6: rolling control-channel latency statistics. */
+    public LatencyStats latency() {
+        return latency;
+    }
+
     public List<ControlTransport> transports() {
         return transports;
     }
@@ -196,6 +203,7 @@ public final class Despotes {
         o.addProperty("mouseCaptured", platform.isMouseCaptured());
         o.addProperty("queueSize", dispatcher.queueSize());
         o.add("lifecycle", lifeCycle.snapshot());
+        o.add("latency", latency.snapshot());
         return o;
     }
 }
