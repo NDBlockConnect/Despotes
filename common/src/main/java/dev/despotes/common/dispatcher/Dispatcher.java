@@ -163,6 +163,11 @@ public final class Dispatcher {
         return queue.size();
     }
 
+    /** v26.2-Alpha.7: client ticks processed since boot (heartbeat source for ping). */
+    public int tickCount() {
+        return tickCount;
+    }
+
     public JsonArray executingJson() {
         JsonArray a = new JsonArray();
         for (String s : executing) {

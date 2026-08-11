@@ -228,6 +228,44 @@ public interface IGamePlatform {
         return new com.google.gson.JsonObject();
     }
 
+    /**
+     * v26.2-Alpha.7: locate a loaded entity by UUID for the {@code look} action's
+     * {@code lookat} mode. Reflective across versions: prefers
+     * {@code Level#getEntity(UUID)} (26.x / 1.21.x) and falls back to the level's entity
+     * getter ({@code getEntities().get(UUID)}) on older lines. Returns
+     * {@code {"found":false}} when the entity is not loaded.
+     */
+    default com.google.gson.JsonObject findEntity(String uuid) {
+        com.google.gson.JsonObject o = new com.google.gson.JsonObject();
+        try {
+            java.util.UUID id = java.util.UUID.fromString(uuid);
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            Object level = mc.getClass().getField("level").get(mc);
+            Object entity = null;
+            try {
+                entity = level.getClass().getMethod("getEntity", java.util.UUID.class).invoke(level, id);
+            } catch (NoSuchMethodException ignored) {
+                java.lang.reflect.Method getter = level.getClass().getDeclaredMethod("getEntities");
+                getter.setAccessible(true);
+                entity = getter.invoke(level).getClass()
+                        .getMethod("get", java.util.UUID.class).invoke(null, id);
+            }
+            if (entity == null) {
+                o.addProperty("found", false);
+                return o;
+            }
+            o.addProperty("found", true);
+            o.addProperty("x", ((Number) entity.getClass().getMethod("getX").invoke(entity)).doubleValue());
+            o.addProperty("y", ((Number) entity.getClass().getMethod("getY").invoke(entity)).doubleValue());
+            o.addProperty("z", ((Number) entity.getClass().getMethod("getZ").invoke(entity)).doubleValue());
+            return o;
+        } catch (Throwable t) {
+            o.addProperty("found", false);
+            return o;
+        }
+    }
+
     /** v26.2-Alpha.2 extended self vitals: food/armor/air, state flags, motion, effects, environment. */
     default com.google.gson.JsonObject probeSelf() {
         try {
