@@ -30,7 +30,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.2-Alpha.8";
+    public static final String VERSION = "v26.2-Alpha.9";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
