@@ -58,6 +58,11 @@ public final class Actions {
                 return doScreenQuery(ctx);
             case "inventory":
                 return doInventoryQuery(ctx);
+            case "self":
+                return Result.ok(ctx.despotes().platform().probeSelf());
+            case "threats":
+                return Result.ok(ctx.despotes().platform()
+                        .probeThreats(Json.getDouble(cmd, "radius", 12)));
             case "world":
                 return Result.ok(ctx.despotes().platform().probeWorld());
             case "blocks":
@@ -71,6 +76,10 @@ public final class Actions {
                 return Result.ok(ctx.despotes().platform().probeContainer());
             case "hotbar":
                 return doHotbar(ctx, cmd);
+            case "respawn":
+                return doRespawn(ctx);
+            case "ping":
+                return doPing(ctx);
             case "ai":
                 return doAi(ctx, cmd);
             case "pending":
@@ -144,7 +153,7 @@ public final class Actions {
         switch (target) {
             case "chat": {
                 if (text.startsWith("/")) {
-                    p.sendChat(text);
+                    p.sendCommand(text);
                 } else {
                     p.openChat();
                     p.injectChars(text);
@@ -157,7 +166,7 @@ public final class Actions {
                 break;
             }
             case "command":
-                p.sendChat(text.startsWith("/") ? text : "/" + text);
+                p.sendCommand(text);
                 break;
             case "focused":
                 ctx.requireScreen();
@@ -194,7 +203,7 @@ public final class Actions {
         boolean submit = Json.getBool(cmd, "submit", true);
         String via;
         if (text.startsWith("/")) {
-            p.sendChat(text);
+            p.sendCommand(text);
             via = "command";
             submit = true;
         } else {
@@ -265,6 +274,34 @@ public final class Actions {
         } else if (mode.equals("delta")) {
             targetYaw = player.yaw() + yaw;
             targetPitch = clampPitch(player.pitch() + pitch);
+        } else if (mode.equals("lookat")) {
+            // v26.2-Alpha.7: face a coordinate or an entity (by uuid).
+            double tx;
+            double ty;
+            double tz;
+            String uuid = Json.getStr(cmd, "uuid", "");
+            if (!uuid.isBlank()) {
+                JsonObject found = p.findEntity(uuid);
+                if (!Json.getBool(found, "found", false)) {
+                    throw ProtocolError.badRequest("entity not found or not loaded: " + uuid);
+                }
+                tx = Json.getDouble(found, "x", 0);
+                ty = Json.getDouble(found, "y", 0);
+                tz = Json.getDouble(found, "z", 0);
+            } else if (cmd.has("x") && cmd.has("y") && cmd.has("z")) {
+                tx = Json.getDouble(cmd, "x", 0);
+                ty = Json.getDouble(cmd, "y", 0);
+                tz = Json.getDouble(cmd, "z", 0);
+            } else {
+                throw ProtocolError.badRequest("lookat requires 'x'/'y'/'z' or 'uuid'");
+            }
+            double eyeY = player.y() + 1.62;
+            double dx = tx - player.x();
+            double dy = ty - eyeY;
+            double dz = tz - player.z();
+            double horizontal = Math.sqrt(dx * dx + dz * dz);
+            targetYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+            targetPitch = clampPitch((float) -Math.toDegrees(Math.atan2(dy, horizontal)));
         } else {
             throw ProtocolError.badRequest("unknown 'mode': " + mode);
         }
@@ -284,6 +321,24 @@ public final class Actions {
 
     private static float clampPitch(float pitch) {
         return Math.max(-89.9f, Math.min(89.9f, pitch));
+    }
+
+    // ---- ping (v26.2-Alpha.7 health check) ----
+
+    /**
+     * Cheap liveness probe that works from any screen: returns the dispatcher heartbeat
+     * (client ticks since boot), queue size, fps and a wall-clock stamp. Round-tripping this
+     * tells a caller both that the transport is alive and that the game loop is ticking.
+     */
+    private static Result doPing(ActionContext ctx) {
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "pong");
+        res.addProperty("tickCount", ctx.despotes().dispatcher().tickCount());
+        res.addProperty("queueSize", ctx.despotes().dispatcher().queueSize());
+        res.addProperty("inGame", ctx.despotes().platform().inGame());
+        res.addProperty("fps", ctx.despotes().platform().fps());
+        res.addProperty("timestampMs", System.currentTimeMillis());
+        return Result.ok(res);
     }
 
     // ---- function (semantic keys, issue 4) ----
@@ -357,6 +412,29 @@ public final class Actions {
         JsonObject res = new JsonObject();
         res.addProperty("executed", "hotbar");
         res.addProperty("slot", slot);
+        return Result.ok(res);
+    }
+
+    /**
+     * v26.2 death awareness: respawn a dead player. Requires the player to be dead; the
+     * platform sends the vanilla respawn packet and closes the death screen. Works while
+     * the death screen is open (the normal case).
+     */
+    private static Result doRespawn(ActionContext ctx) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        var player = p.player();
+        if (player == null) {
+            throw ProtocolError.notInGame();
+        }
+        if (!player.dead()) {
+            throw ProtocolError.badRequest("player is not dead; respawn only applies when dead");
+        }
+        boolean sent = p.respawn();
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "respawn");
+        res.addProperty("dispatched", sent);
+        res.addProperty("deathScreenOpen", p.deathScreenOpen());
         return Result.ok(res);
     }
 
@@ -627,6 +705,9 @@ public final class Actions {
         }
         res.addProperty("open", true);
         res.addProperty("title", screen.title());
+        if (p.deathScreenOpen()) {
+            res.addProperty("kind", "death");
+        }
         res.addProperty("width", screen.width());
         res.addProperty("height", screen.height());
         res.add("widgets", screen.widgetTree(4));

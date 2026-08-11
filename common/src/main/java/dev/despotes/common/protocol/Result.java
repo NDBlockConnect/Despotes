@@ -45,4 +45,9 @@ public final class Result {
     public String toJsonString(String requestId) {
         return ok ? Json.ok(requestId, result) : Json.error(requestId, error);
     }
+
+    /** v26.2-Alpha.6: envelope carrying the command's queue wait and execution time. */
+    public String toJsonString(String requestId, long waitedUs, long execUs) {
+        return ok ? Json.ok(requestId, result, waitedUs, execUs) : Json.error(requestId, error);
+    }
 }

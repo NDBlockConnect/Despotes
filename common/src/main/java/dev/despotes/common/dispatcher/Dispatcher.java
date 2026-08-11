@@ -35,6 +35,8 @@ public final class Dispatcher {
         public final String sourceId;
         public final String transport;
         public final CompletableFuture<String> response = new CompletableFuture<>();
+        /** v26.2-Alpha.6: enqueue time, used to measure queue wait latency. */
+        public final long enqueueNanos = System.nanoTime();
 
         public Command(JsonObject json, String requestId, String sourceId, String transport) {
             this.json = json;
@@ -103,6 +105,9 @@ public final class Dispatcher {
         for (Command cmd : batch) {
             String type = Json.getStr(cmd.json, "type", "?");
             long start = System.nanoTime();
+            // v26.2-Alpha.6: time spent waiting in the queue before the client thread
+            // picked this command up (queue contention / tick-budget saturation).
+            long waitedUs = (start - cmd.enqueueNanos) / 1000;
 
             // Screenshot runs on the async GPU-copy path: the response future is
             // completed from the capture callback, never on this tick.
@@ -135,11 +140,13 @@ public final class Dispatcher {
                 despotes.platform().log("[Despotes] command '" + type + "' failed: " + t);
             }
             long durUs = (System.nanoTime() - start) / 1000;
-            executing.add(String.format("[%s#%s] %s %s (%dus)", cmd.transport, cmd.requestId,
-                    type, result.ok() ? "ok" : "ERR:" + result.error().code(), durUs));
+            // v26.2-Alpha.6: feed the rolling latency statistics.
+            despotes.latency().record(waitedUs, durUs);
+            executing.add(String.format("[%s#%s] %s %s (wait %dus, exec %dus)", cmd.transport, cmd.requestId,
+                    type, result.ok() ? "ok" : "ERR:" + result.error().code(), waitedUs, durUs));
             despotes.opLog().record(new OpEntry(cmd.sourceId, cmd.transport, cmd.requestId,
                     type, result, durUs));
-            cmd.response.complete(result.toJsonString(cmd.requestId));
+            cmd.response.complete(result.toJsonString(cmd.requestId, waitedUs, durUs));
         }
     }
 
@@ -154,6 +161,11 @@ public final class Dispatcher {
 
     public int queueSize() {
         return queue.size();
+    }
+
+    /** v26.2-Alpha.7: client ticks processed since boot (heartbeat source for ping). */
+    public int tickCount() {
+        return tickCount;
     }
 
     public JsonArray executingJson() {

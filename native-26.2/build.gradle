@@ -16,18 +16,21 @@ java {
 // Compile against the official-named vanilla 26.2 client jar (Mojang unobfuscated from
 // 26.1 onward). Gson ships with the Minecraft client, so it is compileOnly here too.
 def mcClient = file("C:/Users/Sails/AppData/Local/mdl/versions/26.2/26.2.jar")
-def mcServer = file("C:/Users/Sails/AppData/Local/mdl/versions/26.2/26.2.jar").toPath().resolveSibling("server.jar").toFile()
+def asmDir = file("C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm")
 
 dependencies {
-    compileOnly files(mcClient, mcServer)
+    compileOnly files(mcClient)
     // Full vanilla dependency set (fastutil/guava/joml/slf4j/...): javac must resolve every
     // type referenced by MC signatures.
+    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
     compileOnly "com.google.code.gson:gson:2.11.0"
-    compileOnly "org.jetbrains:annotations:24.0.1"
-    compileOnly "org.jspecify:jspecify:1.0.0"
-    compileOnly "it.unimi.dsi:fastutil:8.5.15"
-    compileOnly "com.mojang:brigadier:1.3.10"
-    compileOnly "com.mojang:datafixerupper:8.0.16"
+
+    // v26.2-Alpha.3: ASM for dynamic instrumentation. Implementation so the transformer
+    // classes are compiled against it; the classes are also embedded into the agent jar.
+    implementation files(
+            file("$asmDir/asm/9.10.1/asm-9.10.1.jar"),
+            file("$asmDir/asm-tree/9.10.1/asm-tree-9.10.1.jar"),
+            file("$asmDir/asm-commons/9.10.1/asm-commons-9.10.1.jar"))
 }
 
 sourceSets {
@@ -50,9 +53,17 @@ jar {
         attributes([
             'Premain-Class'       : 'dev.despotes.vanilla.DespotesAgent',
             'Agent-Class'         : 'dev.despotes.vanilla.DespotesAgent',
-            'Can-Retransform-Classes' : 'false',
+            'Can-Retransform-Classes' : 'true',
             'Specification-Title' : mod_id,
             'Implementation-Version' : mod_semver
         ])
     }
+    // v26.2-Alpha.3: embed the ASM classes so the agent jar is self-contained — the JVM
+    // only puts the agent jar itself on the system classpath at premain time.
+    from {
+        configurations.runtimeClasspath.filter { it.name.startsWith('asm') }.collect {
+            zipTree(it).matching { exclude 'META-INF/**' }
+        }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

@@ -24,6 +24,14 @@ public interface PlayerHandle {
 
     int selectedHotbarSlot();
 
+    /**
+     * True when the player is dead (health depleted). v26.2 death awareness: the default
+     * derives from {@link #health()}; loader lines may override with a more direct check.
+     */
+    default boolean dead() {
+        return health() <= 0.0f;
+    }
+
     default JsonObject statusJson() {
         JsonObject o = new JsonObject();
         o.addProperty("name", name());
@@ -33,6 +41,7 @@ public interface PlayerHandle {
         o.addProperty("yaw", yaw());
         o.addProperty("pitch", pitch());
         o.addProperty("health", health());
+        o.addProperty("dead", dead());
         o.addProperty("dimension", dimension());
         o.addProperty("selectedSlot", selectedHotbarSlot());
         return o;

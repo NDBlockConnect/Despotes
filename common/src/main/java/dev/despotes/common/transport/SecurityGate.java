@@ -74,14 +74,22 @@ public final class SecurityGate {
             checkPeer(remote, token);
             String type = Json.normalize(Json.getStr(cmd, "type", ""));
             if (isQuery(type)) {
+                // v26.2-Alpha.6: queries run inline on the client thread (never queued), so
+                // their queue wait is always 0; measure the snapshot execution time and
+                // surface it in the envelope for parity with queued actions.
+                java.util.concurrent.atomic.AtomicLong execUs = new java.util.concurrent.atomic.AtomicLong();
                 Result r = despotes.platform().awaitOnClientThread(() -> {
+                    long start = System.nanoTime();
                     ActionContext ctx = new ActionContext(despotes, requestId, transportId, transportId);
-                    return Actions.execute(ctx, cmd);
+                    Result res = Actions.execute(ctx, cmd);
+                    execUs.set((System.nanoTime() - start) / 1000);
+                    return res;
                 }, despotes.config().http.screenshotTimeoutMs);
                 if (r == null) {
                     return Json.error(requestId, ProtocolError.timeout("query timed out"));
                 }
-                return r.toJsonString(requestId);
+                despotes.latency().record(0, execUs.get());
+                return r.toJsonString(requestId, 0, execUs.get());
             }
             return despotes.dispatcher().submit(
                     new dev.despotes.common.dispatcher.Dispatcher.Command(cmd, requestId, transportId, transportId),
@@ -116,14 +124,19 @@ public final class SecurityGate {
             String type = Json.normalize(Json.getStr(c, "type", ""));
             try {
                 if (isQuery(type)) {
+                    java.util.concurrent.atomic.AtomicLong execUs = new java.util.concurrent.atomic.AtomicLong();
                     Result r = despotes.platform().awaitOnClientThread(() -> {
+                        long start = System.nanoTime();
                         ActionContext ctx = new ActionContext(despotes, rid, transportId, transportId);
-                        return Actions.execute(ctx, c);
+                        Result res = Actions.execute(ctx, c);
+                        execUs.set((System.nanoTime() - start) / 1000);
+                        return res;
                     }, waitMs);
                     if (r == null) {
                         results.add(JsonParser.parseString(Json.error(rid, ProtocolError.timeout("query timed out"))));
                     } else {
-                        results.add(JsonParser.parseString(r.toJsonString(rid)));
+                        despotes.latency().record(0, execUs.get());
+                        results.add(JsonParser.parseString(r.toJsonString(rid, 0, execUs.get())));
                     }
                 } else {
                     String resp = despotes.dispatcher().submit(

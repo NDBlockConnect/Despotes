@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "despotes",
-  "version": "26.0.0-Alpha.7",
+  "version": "${aprism_version}",
   "displayName": "Despotes",
   "description": "In-process local control channel for Minecraft: external sources drive the game without touching your keyboard or mouse.",
   "authors": [ { "name": "StarsailsClover" } ],

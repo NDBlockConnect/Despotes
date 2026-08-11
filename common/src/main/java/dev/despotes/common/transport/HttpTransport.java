@@ -82,7 +82,13 @@ public final class HttpTransport implements ControlTransport {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
-    /** Alpha.9: poll captured game events (chat/system) since a sequence number. */
+    /**
+     * Alpha.9: poll captured game events (chat/system) since a sequence number.
+     *
+     * <p>v26.2-Alpha.7: optional long polling — {@code ?wait=<ms>} (capped at 25 s) holds
+     * the request open until at least one new event arrives or the window elapses, so
+     * agents can stream events without hammering the endpoint.
+     */
     private void handleEvents(HttpExchange ex) {
         if (!"GET".equalsIgnoreCase(ex.getRequestMethod())) {
             sendJson(ex, 405, Json.error(null, ProtocolError.badRequest("GET required")));
@@ -92,6 +98,7 @@ public final class HttpTransport implements ControlTransport {
             String token = peerToken(ex);
             gate.checkPeer(ex.getRemoteAddress(), token);
             long since = 0;
+            long waitMs = 0;
             String q = ex.getRequestURI().getQuery();
             if (q != null) {
                 for (String kv : q.split("&")) {
@@ -104,10 +111,33 @@ public final class HttpTransport implements ControlTransport {
                                     ProtocolError.badRequest("'since' must be a number")));
                             return;
                         }
+                    } else if (i > 0 && "wait".equals(kv.substring(0, i))) {
+                        try {
+                            waitMs = Long.parseLong(kv.substring(i + 1).trim());
+                        } catch (NumberFormatException e) {
+                            sendJson(ex, 400, Json.error(null,
+                                    ProtocolError.badRequest("'wait' must be a number")));
+                            return;
+                        }
                     }
                 }
             }
             var events = despotes.eventBus().since(since);
+            if (events.isEmpty() && waitMs > 0) {
+                // Long poll: check the bus every 50 ms until something lands or the
+                // window closes. Worker threads are pooled, so a few held requests are
+                // harmless; the cap keeps the worst case bounded.
+                long deadline = System.currentTimeMillis() + Math.min(waitMs, 25000);
+                while (events.isEmpty() && System.currentTimeMillis() < deadline) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                    events = despotes.eventBus().since(since);
+                }
+            }
             JsonObject result = new JsonObject();
             result.addProperty("lastSeq", despotes.eventBus().lastSeq());
             result.add("events", dev.despotes.common.events.EventBus.toJsonArray(events));

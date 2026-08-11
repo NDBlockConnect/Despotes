@@ -1,8 +1,10 @@
 package dev.despotes.forge;
 
+import com.google.gson.JsonObject;
 import dev.despotes.common.Despotes;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -26,6 +28,31 @@ public final class DespotesForgeClient {
             if (d != null) {
                 d.clientTick();
             }
+        });
+
+        // v26.2-Alpha.8 (loader parity): capture inbound chat / system messages
+        // into the event bus, matching the fabric line so /events works everywhere.
+        MinecraftForge.EVENT_BUS.addListener((ClientChatReceivedEvent.Player e) -> {
+            Despotes d = bootOnce();
+            if (d == null) {
+                return;
+            }
+            JsonObject payload = new JsonObject();
+            payload.addProperty("message", e.getMessage().getString());
+            payload.addProperty("kind", "chat");
+            payload.addProperty("sender", String.valueOf(e.getSender()));
+            d.eventBus().publish("chat", payload);
+        });
+        MinecraftForge.EVENT_BUS.addListener((ClientChatReceivedEvent.System e) -> {
+            Despotes d = bootOnce();
+            if (d == null) {
+                return;
+            }
+            JsonObject payload = new JsonObject();
+            payload.addProperty("message", e.getMessage().getString());
+            payload.addProperty("kind", "system");
+            payload.addProperty("overlay", e.isOverlay());
+            d.eventBus().publish(e.isOverlay() ? "overlay" : "system", payload);
         });
     }
 
