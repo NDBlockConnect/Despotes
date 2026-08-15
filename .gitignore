@@ -6,6 +6,12 @@ out/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# Per-subproject Gradle wrapper copies (root-level gradlew + gradle/wrapper/ suffice)
+# Keep each subproject's gradle-wrapper.properties (version may differ), skip the rest
+*/gradlew
+*/gradlew.bat
+*/gradle/wrapper/gradle-wrapper.jar
+
 # IDE
 .idea/
 *.iml
@@ -26,8 +32,19 @@ despotes-oplog.jsonl
 despotes-shots/
 despotes-in/
 
+# Release artifacts (attached to GitHub Releases, not committed)
+releases/**/*.jar
+releases/**/*.aje
+
 # Local toolchain (JDKs, downloaded zips)
 .tools/
+
+# NeoForge installer logs
+neoforge-*-installer.jar.log
+
+# JVM crash dumps
+hs_err_pid*
+replay_pid*
 
 # OS
 .DS_Store
