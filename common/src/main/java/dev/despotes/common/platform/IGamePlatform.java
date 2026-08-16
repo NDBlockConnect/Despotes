@@ -146,6 +146,103 @@ public interface IGamePlatform {
         }
     }
 
+    /**
+     * v26.3-Alpha.1: click a slot in the currently open container menu.
+     *
+     * <p>This is the universal entry point for all inventory manipulation: moving items,
+     * dropping, splitting, swapping, quick-moving (shift-click). It works reflectively across
+     * all supported MC versions:
+     * <ul>
+     *   <li><b>26.x</b>: {@code MultiPlayerGameMode.handleContainerInput(int slot, int button,
+     *       int clickCount, ContainerInput, Player)} where {@code ContainerInput} is an enum
+     *       (PICKUP, QUICK_MOVE, SWAP, CLONE, THROW, QUICK_CRAFT, PICKUP_ALL).</li>
+     *   <li><b>1.20.x / 1.21.x</b>: {@code MultiPlayerGameMode.handleInventoryMouseClick(int
+     *       containerId, int slot, int button, ClickType, Player)} where {@code ClickType}
+     *       is an enum (PICKUP, QUICK_MOVE, SWAP, CLONE, THROW, PICKUP_ALL).</li>
+     * </ul>
+     *
+     * @param slotIndex   the slot index in the open menu (0-based)
+     * @param button      mouse button (0=left, 1=right)
+     * @param clickType   one of: "pickup", "quick_move", "swap", "clone", "throw", "pickup_all"
+     * @param clickCount  click count (for double-click etc; usually 0)
+     * @return true if the click was dispatched
+     */
+    default boolean slotClick(int slotIndex, int button, String clickType, int clickCount) {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            // Resolve gameMode field — named "gameMode" across versions
+            java.lang.reflect.Field gmField = null;
+            Class<?> mcCls = mc.getClass();
+            while (mcCls != null) {
+                try {
+                    gmField = mcCls.getDeclaredField("gameMode");
+                    break;
+                } catch (NoSuchFieldException e) {
+                    mcCls = mcCls.getSuperclass();
+                }
+            }
+            if (gmField == null) return false;
+            gmField.setAccessible(true);
+            Object gm = gmField.get(mc);
+            if (gm == null) return false;
+            Object player = mc.getClass().getField("player").get(mc);
+            if (player == null) return false;
+            // Resolve Player superclass for method lookup (methods declare Player, not LocalPlayer)
+            Class<?> playerClass = Class.forName("net.minecraft.world.entity.player.Player");
+            String enumName = clickType.toUpperCase().replace("-", "_");
+
+            // Try 26.x API: handleContainerInput(int containerId, int slot, int button, ContainerInput, Player)
+            try {
+                Class<?> inputEnum = Class.forName("net.minecraft.world.inventory.ContainerInput");
+                Object inputVal = java.lang.Enum.valueOf(
+                        inputEnum.asSubclass(java.lang.Enum.class), enumName);
+                Object menu = player.getClass().getField("containerMenu").get(player);
+                int containerId = menu.getClass().getField("containerId").getInt(menu);
+                java.lang.reflect.Method m = gm.getClass().getMethod(
+                        "handleContainerInput", int.class, int.class, int.class, inputEnum, playerClass);
+                m.invoke(gm, containerId, slotIndex, button, inputVal, player);
+                return true;
+            } catch (NoSuchMethodException | ClassNotFoundException e) {
+                // Fall through to legacy API
+            }
+
+            // Try 1.20.x / 1.21.x API: handleInventoryMouseClick(int containerId, int slot, int button, ClickType, Player)
+            try {
+                Class<?> clickTypeEnum = Class.forName("net.minecraft.world.inventory.ClickType");
+                Object clickVal = java.lang.Enum.valueOf(
+                        clickTypeEnum.asSubclass(java.lang.Enum.class), enumName);
+                Object menu = player.getClass().getField("containerMenu").get(player);
+                int containerId = menu.getClass().getField("containerId").getInt(menu);
+                java.lang.reflect.Method m = gm.getClass().getMethod(
+                        "handleInventoryMouseClick", int.class, int.class, int.class, clickTypeEnum, playerClass);
+                m.invoke(gm, containerId, slotIndex, button, clickVal, player);
+                return true;
+            } catch (NoSuchMethodException | ClassNotFoundException e2) {
+                // Final fallback: call AbstractContainerMenu.clicked directly
+                Object menu = player.getClass().getField("containerMenu").get(player);
+                try {
+                    Class<?> inputEnum = Class.forName("net.minecraft.world.inventory.ContainerInput");
+                    Object inputVal = java.lang.Enum.valueOf(
+                            inputEnum.asSubclass(java.lang.Enum.class), enumName);
+                    menu.getClass().getMethod("clicked", int.class, int.class, inputEnum, playerClass)
+                            .invoke(menu, slotIndex, button, inputVal, player);
+                    return true;
+                } catch (ClassNotFoundException e3) {
+                    Class<?> clickTypeEnum = Class.forName("net.minecraft.world.inventory.ClickType");
+                    Object clickVal = java.lang.Enum.valueOf(
+                            clickTypeEnum.asSubclass(java.lang.Enum.class), enumName);
+                    menu.getClass().getMethod("clicked", int.class, int.class, clickTypeEnum, playerClass)
+                            .invoke(menu, slotIndex, button, clickVal, player);
+                    return true;
+                }
+            }
+        } catch (Throwable t) {
+            log("[Despotes] slotClick failed: " + t);
+            return false;
+        }
+    }
+
     /** World interactions. */
     default void worldAttack() {
     }

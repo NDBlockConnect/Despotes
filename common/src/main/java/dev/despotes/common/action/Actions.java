@@ -74,6 +74,10 @@ public final class Actions {
                 return Result.ok(ctx.despotes().platform().probeTarget());
             case "container":
                 return Result.ok(ctx.despotes().platform().probeContainer());
+            case "inventory-action":
+                return doInventoryAction(ctx, cmd);
+            case "equip":
+                return doEquip(ctx, cmd);
             case "hotbar":
                 return doHotbar(ctx, cmd);
             case "respawn":
@@ -412,6 +416,184 @@ public final class Actions {
         JsonObject res = new JsonObject();
         res.addProperty("executed", "hotbar");
         res.addProperty("slot", slot);
+        return Result.ok(res);
+    }
+
+    // ---- inventory-action (v26.3-Alpha.1) ----
+
+    /**
+     * Inventory slot manipulation via the open container menu. Supports:
+     * <ul>
+     *   <li><b>moveSlot</b>: move item from slot A to slot B (pickup A, place at B)</li>
+     *   <li><b>quickMove</b>: shift-click a slot (auto-move to other inventory section)</li>
+     *   <li><b>drop</b>: click outside inventory to drop (THROW click)</li>
+     *   <li><b>split</b>: right-click to split a stack in half</li>
+     *   <li><b>swap</b>: swap with hotbar slot (SWAP click type, button = hotbar 0-8)</li>
+     * </ul>
+     *
+     * Requires a container menu to be open (player.containerMenu must not be the default
+     * player inventory, or a screen must be open with the menu active).
+     */
+    private static Result doInventoryAction(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        String op = Json.normalize(Json.getStr(cmd, "op", "quickMove"));
+
+        switch (op) {
+            case "moveslot": {
+                int fromSlot = Json.getInt(cmd, "fromSlot", -1);
+                int toSlot = Json.getInt(cmd, "toSlot", -1);
+                if (fromSlot < 0 || toSlot < 0) {
+                    throw ProtocolError.badRequest("moveSlot requires 'fromSlot' and 'toSlot'");
+                }
+                // Pickup from slot, then place at target slot
+                boolean ok1 = p.slotClick(fromSlot, 0, "pickup", 0);
+                boolean ok2 = p.slotClick(toSlot, 0, "pickup", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "inventory-action");
+                res.addProperty("op", "moveSlot");
+                res.addProperty("fromSlot", fromSlot);
+                res.addProperty("toSlot", toSlot);
+                res.addProperty("dispatched", ok1 && ok2);
+                return Result.ok(res);
+            }
+            case "quickmove": {
+                int slot = Json.getInt(cmd, "slot", -1);
+                if (slot < 0) {
+                    throw ProtocolError.badRequest("quickMove requires 'slot'");
+                }
+                boolean ok = p.slotClick(slot, 0, "quick_move", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "inventory-action");
+                res.addProperty("op", "quickMove");
+                res.addProperty("slot", slot);
+                res.addProperty("dispatched", ok);
+                return Result.ok(res);
+            }
+            case "drop": {
+                int slot = Json.getInt(cmd, "slot", -1);
+                if (slot < 0) {
+                    throw ProtocolError.badRequest("drop requires 'slot'");
+                }
+                // THROW click with button=0 drops one item; button=1 drops entire stack
+                int button = Json.getBool(cmd, "stack", false) ? 1 : 0;
+                boolean ok = p.slotClick(slot, button, "throw", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "inventory-action");
+                res.addProperty("op", "drop");
+                res.addProperty("slot", slot);
+                res.addProperty("stack", Json.getBool(cmd, "stack", false));
+                res.addProperty("dispatched", ok);
+                return Result.ok(res);
+            }
+            case "split": {
+                int slot = Json.getInt(cmd, "slot", -1);
+                if (slot < 0) {
+                    throw ProtocolError.badRequest("split requires 'slot'");
+                }
+                // Right-click picks up half the stack
+                boolean ok = p.slotClick(slot, 1, "pickup", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "inventory-action");
+                res.addProperty("op", "split");
+                res.addProperty("slot", slot);
+                res.addProperty("dispatched", ok);
+                return Result.ok(res);
+            }
+            case "swap": {
+                int slot = Json.getInt(cmd, "slot", -1);
+                int hotbarSlot = Json.getInt(cmd, "hotbarSlot", -1);
+                if (slot < 0 || hotbarSlot < 0 || hotbarSlot > 8) {
+                    throw ProtocolError.badRequest("swap requires 'slot' (0+) and 'hotbarSlot' (0-8)");
+                }
+                // SWAP click type: button = hotbar slot index
+                boolean ok = p.slotClick(slot, hotbarSlot, "swap", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "inventory-action");
+                res.addProperty("op", "swap");
+                res.addProperty("slot", slot);
+                res.addProperty("hotbarSlot", hotbarSlot);
+                res.addProperty("dispatched", ok);
+                return Result.ok(res);
+            }
+            case "pickup": {
+                int slot = Json.getInt(cmd, "slot", -1);
+                if (slot < 0) {
+                    throw ProtocolError.badRequest("pickup requires 'slot'");
+                }
+                int button = Json.getInt(cmd, "button", 0);
+                boolean ok = p.slotClick(slot, button, "pickup", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "inventory-action");
+                res.addProperty("op", "pickup");
+                res.addProperty("slot", slot);
+                res.addProperty("button", button);
+                res.addProperty("dispatched", ok);
+                return Result.ok(res);
+            }
+            default:
+                throw ProtocolError.badRequest("unknown inventory-action 'op': " + op);
+        }
+    }
+
+    // ---- equip (v26.3-Alpha.2) ----
+
+    /**
+     * Equip or unequip armor. In MC's InventoryMenu the armor slots are:
+     * 5=helmet, 6=chestplate, 7=leggings, 8=boots (0-4 are craft/offhand).
+     *
+     * To equip: pickup the item from sourceSlot, then click the armor slot to place it.
+     * To unequip: pickup from armor slot, then click an empty main inventory slot.
+     */
+    private static Result doEquip(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        String op = Json.normalize(Json.getStr(cmd, "op", "equip"));
+        String piece = Json.normalize(Json.getStr(cmd, "piece", ""));
+
+        int armorSlot = switch (piece) {
+            case "helmet" -> 5;
+            case "chestplate" -> 6;
+            case "leggings" -> 7;
+            case "boots" -> 8;
+            default -> -1;
+        };
+        if (armorSlot < 0) {
+            throw ProtocolError.badRequest("unknown armor 'piece': " + piece
+                    + " (expected: helmet, chestplate, leggings, boots)");
+        }
+
+        if (op.equals("unequip")) {
+            // Pickup from armor slot, then place at a main inventory slot (9 is first main slot)
+            p.slotClick(armorSlot, 0, "pickup", 0);
+            p.slotClick(9, 0, "pickup", 0);
+            JsonObject res = new JsonObject();
+            res.addProperty("executed", "equip");
+            res.addProperty("op", "unequip");
+            res.addProperty("piece", piece);
+            res.addProperty("armorSlot", armorSlot);
+            res.addProperty("dispatched", true);
+            return Result.ok(res);
+        }
+
+        // Default: equip — pickup from source, place at armor slot
+        int sourceSlot = Json.getInt(cmd, "slot", -1);
+        boolean ok = false;
+        if (sourceSlot >= 0) {
+            boolean ok1 = p.slotClick(sourceSlot, 0, "pickup", 0);
+            boolean ok2 = p.slotClick(armorSlot, 0, "pickup", 0);
+            ok = ok1 && ok2;
+        }
+
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "equip");
+        res.addProperty("op", "equip");
+        res.addProperty("piece", piece);
+        res.addProperty("armorSlot", armorSlot);
+        if (sourceSlot >= 0) {
+            res.addProperty("sourceSlot", sourceSlot);
+        }
+        res.addProperty("dispatched", ok);
         return Result.ok(res);
     }
 

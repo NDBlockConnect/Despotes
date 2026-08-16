@@ -30,7 +30,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.2";
+    public static final String VERSION = "v26.3-Alpha.1";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -75,7 +75,7 @@ public final class Despotes {
             try {
                 platform.setWindowMinimized(true);
                 platform.scheduleOnClientThread(() -> platform.setWindowMinimized(false));
-                platform.log("[Despotes] window.grabFocusOnStart=false — not taking focus on start.");
+                platform.log("[Despotes] window.grabFocusOnStart=false; not taking focus on start.");
             } catch (Throwable t) {
                 platform.log("[Despotes] focus yield on start failed: " + t);
             }
