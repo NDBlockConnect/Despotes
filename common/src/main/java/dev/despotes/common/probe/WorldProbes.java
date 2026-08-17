@@ -329,6 +329,268 @@ public final class WorldProbes {
         return o;
     }
 
+    /**
+     * v26.3-Alpha.2: recipe book readout. Returns the list of recipes the player has
+     * unlocked, plus the ones currently highlighted/highlightable. Reflective across
+     * versions: MC 26.x uses {@code RecipeBook} with {@code getHighlighted()} and
+     * {@code getKnown()}, while 1.20.x/1.21.x use {@code ClientRecipeBook} with similar
+     * methods. Each recipe entry carries the recipe id and result item id.
+     */
+    @SuppressWarnings("unchecked")
+    public static JsonObject recipes(net.minecraft.client.Minecraft mc) {
+        JsonObject o = new JsonObject();
+        if (mc.player == null) {
+            o.addProperty("inWorld", false);
+            return o;
+        }
+        try {
+            // Resolve RecipeManager: try multiple access paths across versions
+            Object recipeMgr = null;
+            // Path 1: mc.level.getRecipeManager()
+            if (mc.level != null) {
+                recipeMgr = call(mc.level, "getRecipeManager");
+                if (recipeMgr == null) recipeMgr = call(mc.level, "getRecipeAccess");
+            }
+            // Path 2: mc.player.connection.getRecipeManager()
+            if (recipeMgr == null && mc.player != null) {
+                Object conn = call(mc.player, "connection");
+                if (conn == null) conn = call(mc, "getConnection");
+                if (conn != null) {
+                    recipeMgr = call(conn, "getRecipeManager");
+                    if (recipeMgr == null) {
+                        try { recipeMgr = findField(conn.getClass(), "recipeManager").get(conn); } catch (Throwable ignored) {}
+                    }
+                }
+            }
+
+            // RecipeBook: mc.player.getRecipeBook()
+            Object recipeBook = call(mc.player, "getRecipeBook");
+
+            // Known recipe IDs — try multiple method names across versions
+            // MC 26.x: getCollections() returns List<RecipeCollection>
+            // MC 1.20.x/1.21.x: getKnown() returns Set<ResourceLocation>
+            java.util.Collection<Object> knownIds = null;
+            java.util.Collection<Object> recipeCollections = null;
+            if (recipeBook != null) {
+                // Try getKnown() first (1.20.x/1.21.x)
+                for (String methodName : new String[]{"getKnown", "known"}) {
+                    try {
+                        Object knownSet = recipeBook.getClass().getMethod(methodName).invoke(recipeBook);
+                        if (knownSet instanceof Collection<?> c) {
+                            knownIds = (Collection<Object>) c;
+                            break;
+                        }
+                    } catch (Throwable ignored) {}
+                }
+                // Try getCollections() (26.x)
+                if (knownIds == null || knownIds.isEmpty()) {
+                    try {
+                        Object colls = recipeBook.getClass().getMethod("getCollections").invoke(recipeBook);
+                        if (colls instanceof Collection<?> c) {
+                            recipeCollections = (Collection<Object>) c;
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            }
+
+            // Highlighted recipe IDs
+            java.util.Collection<Object> highlightedIds = null;
+            if (recipeBook != null) {
+                for (String methodName : new String[]{"getHighlighted", "highlighted"}) {
+                    try {
+                        Object hlSet = recipeBook.getClass().getMethod(methodName).invoke(recipeBook);
+                        if (hlSet instanceof Collection<?> c) {
+                            highlightedIds = (Collection<Object>) c;
+                            break;
+                        }
+                    } catch (Throwable ignored) {}
+                    }
+                }
+
+            // If we have RecipeCollections (MC 26.x), extract recipes from them
+            if (recipeCollections != null && !recipeCollections.isEmpty()) {
+                JsonArray knownArr = new JsonArray();
+                for (Object coll : recipeCollections) {
+                    try {
+                        // RecipeCollection.getRecipes() returns List<RecipeHolder>
+                        Object recipes = coll.getClass().getMethod("getRecipes").invoke(coll);
+                        if (recipes instanceof Collection<?> rc) {
+                            for (Object holder : rc) {
+                                JsonObject r = recipeEntry(holder);
+                                if (r != null) knownArr.add(r);
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                }
+                o.addProperty("source", "recipe_book_collections");
+                o.addProperty("knownCount", knownArr.size());
+                o.add("known", knownArr);
+                o.addProperty("highlightedCount", 0);
+                o.add("highlighted", new JsonArray());
+                return o;
+            }
+
+            // If recipe book is empty/unavailable, get all recipes from RecipeManager
+            if ((knownIds == null || knownIds.isEmpty()) && recipeMgr != null) {
+                Object allRecipes = null;
+                String usedMethod = null;
+                for (String mn : new String[]{"getRecipes", "getAllRecipes", "values", "recipeCollection"}) {
+                    try {
+                        allRecipes = recipeMgr.getClass().getMethod(mn).invoke(recipeMgr);
+                        if (allRecipes != null) { usedMethod = mn; break; }
+                    } catch (Throwable ignored) {}
+                }
+                if (allRecipes instanceof Collection<?> c) {
+                    JsonArray knownArr = new JsonArray();
+                    for (Object recipeHolder : c) {
+                        JsonObject r = recipeEntry(recipeHolder);
+                        if (r != null) knownArr.add(r);
+                    }
+                    o.addProperty("source", "recipe_manager:" + usedMethod);
+                    o.addProperty("knownCount", knownArr.size());
+                    o.add("known", knownArr);
+                    o.addProperty("highlightedCount", 0);
+                    o.add("highlighted", new JsonArray());
+                    return o;
+                } else if (allRecipes instanceof java.util.Map<?,?> m) {
+                    // Some versions return a Map<ResourceLocation, RecipeHolder>
+                    JsonArray knownArr = new JsonArray();
+                    for (Object entry : m.entrySet()) {
+                        Object val = ((java.util.Map.Entry<?,?>) entry).getValue();
+                        JsonObject r = recipeEntry(val);
+                        if (r != null) knownArr.add(r);
+                    }
+                    o.addProperty("source", "recipe_manager_map:" + usedMethod);
+                    o.addProperty("knownCount", knownArr.size());
+                    o.add("known", knownArr);
+                    o.addProperty("highlightedCount", 0);
+                    o.add("highlighted", new JsonArray());
+                    return o;
+                } else if (allRecipes != null) {
+                    o.addProperty("source", "recipe_mgr:" + allRecipes.getClass().getSimpleName());
+                }
+            } else if (knownIds != null && !knownIds.isEmpty()) {
+                o.addProperty("source", "recipe_book");
+            }
+
+            // Resolve known recipe IDs to recipe entries via RecipeManager.byId()
+            JsonArray knownArr = new JsonArray();
+            if (knownIds != null) {
+                for (Object idObj : knownIds) {
+                    JsonObject r = recipeEntryById(recipeMgr, idObj);
+                    if (r != null) knownArr.add(r);
+                }
+            }
+            JsonArray hlArr = new JsonArray();
+            if (highlightedIds != null) {
+                for (Object idObj : highlightedIds) {
+                    JsonObject r = recipeEntryById(recipeMgr, idObj);
+                    if (r != null) hlArr.add(r);
+                }
+            }
+            o.addProperty("knownCount", knownArr.size());
+            o.add("known", knownArr);
+            o.addProperty("highlightedCount", hlArr.size());
+            o.add("highlighted", hlArr);
+        } catch (Throwable t) {
+            o.addProperty("error", "recipe query failed: " + t.getMessage());
+        }
+        return o;
+    }
+
+    /**
+     * Resolve a recipe ID (ResourceLocation) to a recipe entry via RecipeManager.byId().
+     * Falls back to just the ID string if the manager or recipe is unavailable.
+     */
+    private static JsonObject recipeEntryById(Object recipeMgr, Object idObj) {
+        if (idObj == null) return null;
+        JsonObject r = new JsonObject();
+        r.addProperty("id", String.valueOf(idObj));
+        if (recipeMgr != null) {
+            try {
+                // RecipeManager.byId(ResourceLocation) returns Optional<RecipeHolder>
+                java.util.Optional<?> opt = (java.util.Optional<?>)
+                        recipeMgr.getClass().getMethod("byId", idObj.getClass())
+                                .invoke(recipeMgr, idObj);
+                if (opt != null && opt.isPresent()) {
+                    Object holder = opt.get();
+                    fillRecipeEntry(r, holder);
+                }
+            } catch (Throwable ignored) {}
+        }
+        return r;
+    }
+
+    /** Fill in recipe details (result item, type) from a RecipeHolder or Recipe. */
+    private static void fillRecipeEntry(JsonObject r, Object recipeHolder) {
+        try {
+            // RecipeHolder.id() + RecipeHolder.value()
+            Object recipe = null;
+            try {
+                recipe = recipeHolder.getClass().getMethod("value").invoke(recipeHolder);
+            } catch (NoSuchMethodException e) {
+                recipe = recipeHolder; // pre-RecipeHolder
+            }
+            if (recipe != null) {
+                r.addProperty("type", String.valueOf(recipe.getClass().getSimpleName()));
+                try {
+                    Object result = recipe.getClass().getMethod("getResult").invoke(recipe);
+                    if (result != null) {
+                        Object item = result.getClass().getMethod("getItem").invoke(result);
+                        Object key = BuiltInRegistries.ITEM.getKey((net.minecraft.world.item.Item) item);
+                        r.addProperty("result", String.valueOf(key));
+                        r.addProperty("resultCount", ((Number) result.getClass().getMethod("getCount").invoke(result)).intValue());
+                    }
+                } catch (Throwable ignored) {}
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Build a JSON entry for a RecipeHolder: extract the recipe id and result item.
+     * RecipeHolder (1.21+/26.x) wraps a ResourceLocation id + Recipe; older versions
+     * may expose the recipe directly. MC 26.2 uses RecipeDisplayEntry with an id field.
+     */
+    private static JsonObject recipeEntry(Object recipeHolder) {
+        if (recipeHolder == null) return null;
+        JsonObject r = new JsonObject();
+        try {
+            // Try RecipeHolder.id() (1.21.x)
+            Object id = null;
+            try { id = recipeHolder.getClass().getMethod("id").invoke(recipeHolder); } catch (Throwable ignored) {}
+            // Try RecipeDisplayEntry.id() or getId() (26.x)
+            if (id == null) {
+                for (String mn : new String[]{"id", "getId", "identifier", "name"}) {
+                    try { id = recipeHolder.getClass().getMethod(mn).invoke(recipeHolder); if (id != null) break; } catch (Throwable ignored) {}
+                }
+            }
+            r.addProperty("id", String.valueOf(id));
+
+            // Try to get the recipe and its result
+            Object recipe = null;
+            try {
+                recipe = recipeHolder.getClass().getMethod("value").invoke(recipeHolder);
+            } catch (NoSuchMethodException e) {
+                recipe = recipeHolder; // pre-RecipeHolder or the object IS the recipe
+            }
+            if (recipe != null) {
+                r.addProperty("type", String.valueOf(recipe.getClass().getSimpleName()));
+                try {
+                    Object result = recipe.getClass().getMethod("getResult").invoke(recipe);
+                    if (result != null) {
+                        Object item = result.getClass().getMethod("getItem").invoke(result);
+                        Object key = BuiltInRegistries.ITEM.getKey((net.minecraft.world.item.Item) item);
+                        r.addProperty("result", String.valueOf(key));
+                        r.addProperty("resultCount", ((Number) result.getClass().getMethod("getCount").invoke(result)).intValue());
+                    }
+                } catch (Throwable ignored) {}
+            }
+        } catch (Throwable t) {
+            return null;
+        }
+        return r;
+    }
+
     /** Open container (screen menu) snapshot: slots with item + count. */
     public static com.google.gson.JsonObject container(net.minecraft.client.Minecraft mc) {
         com.google.gson.JsonObject o = new com.google.gson.JsonObject();

@@ -74,6 +74,9 @@ public final class Actions {
                 return Result.ok(ctx.despotes().platform().probeTarget());
             case "container":
                 return Result.ok(ctx.despotes().platform().probeContainer());
+            case "recipe":
+            case "recipes":
+                return Result.ok(ctx.despotes().platform().probeRecipes());
             case "inventory-action":
                 return doInventoryAction(ctx, cmd);
             case "equip":

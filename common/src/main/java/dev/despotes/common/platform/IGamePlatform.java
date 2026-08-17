@@ -399,6 +399,18 @@ public interface IGamePlatform {
         }
     }
 
+    /** v26.3-Alpha.2: recipe book readout (known + highlighted recipes). */
+    default com.google.gson.JsonObject probeRecipes() {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.recipes(
+                    (net.minecraft.client.Minecraft) mc);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
     /**
      * v26.2 death awareness: respawn the dead player. Reflective across versions —
      * {@code LocalPlayer.respawn()} exists under the same official name on every supported
