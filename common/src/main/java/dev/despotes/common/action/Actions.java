@@ -79,6 +79,8 @@ public final class Actions {
                 return Result.ok(ctx.despotes().platform().probeRecipes());
             case "inventory-action":
                 return doInventoryAction(ctx, cmd);
+            case "craft":
+                return doCraft(ctx, cmd);
             case "equip":
                 return doEquip(ctx, cmd);
             case "hotbar":
@@ -536,6 +538,95 @@ public final class Actions {
             }
             default:
                 throw ProtocolError.badRequest("unknown inventory-action 'op': " + op);
+        }
+    }
+
+    // ---- craft (v26.3-Alpha.3) ----
+
+    /**
+     * Craft items by placing materials into the crafting grid and extracting the result.
+     *
+     * <p>Two modes:
+     * <ul>
+     *   <li><b>recipe</b>: pass a recipe pattern with ingredient slot→sourceSlot mappings;
+     *       the action places items into the grid, then clicks the result slot.</li>
+     *   <li><b>result</b>: just click the result slot (slot 0) — useful when the grid is
+     *       already filled (e.g. the recipe book auto-filled it).</li>
+     * </ul>
+     *
+     * Requires a crafting menu to be open (player inventory 2x2 or crafting table 3x3).
+     * In the InventoryMenu, the crafting grid slots are 1-4 (2x2) or 1-9 (3x3) and the
+     * result slot is 0.
+     *
+     * Example (craft a crafting table from 4 planks in 2x2):
+     * <pre>{@code
+     * {"type":"craft","mode":"recipe","grid":{"1":37,"2":37,"3":37,"4":37}}
+     * }</pre>
+     *
+     * Example (just take the result):
+     * <pre>{@code
+     * {"type":"craft","mode":"result"}
+     * }</pre>
+     */
+    private static Result doCraft(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        String mode = Json.normalize(Json.getStr(cmd, "mode", "result"));
+
+        switch (mode) {
+            case "recipe": {
+                JsonObject grid = Json.getObj(cmd, "grid");
+                if (grid == null || grid.size() == 0) {
+                    throw ProtocolError.badRequest("craft recipe mode requires 'grid' (slot→sourceSlot map)");
+                }
+                // Place items: for each grid slot, right-click source (picks up 1 item),
+                // then left-click grid slot (places the 1 item)
+                int count = 0;
+                for (String gridSlotStr : grid.keySet()) {
+                    int gridSlot;
+                    try {
+                        gridSlot = Integer.parseInt(gridSlotStr);
+                    } catch (NumberFormatException e) {
+                        throw ProtocolError.badRequest("grid slot keys must be integers (1-9), got: " + gridSlotStr);
+                    }
+                    int sourceSlot = Json.getInt(grid, gridSlotStr, -1);
+                    if (sourceSlot < 0) continue;
+                    // Right-click source: picks up 1 item from the stack
+                    p.slotClick(sourceSlot, 1, "pickup", 0);
+                    // Left-click grid slot: places the 1 item
+                    p.slotClick(gridSlot, 0, "pickup", 0);
+                    count++;
+                }
+                // Extract result: use quick_move (shift-click) on result slot 0 to auto-transfer
+                // to inventory, avoiding cursor management issues.
+                boolean extracted = p.slotClick(0, 0, "quick_move", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "craft");
+                res.addProperty("mode", "recipe");
+                res.addProperty("placements", count);
+                res.addProperty("extracted", extracted);
+                return Result.ok(res);
+            }
+            case "result": {
+                // Just shift-click the result slot (slot 0) — grid is pre-filled
+                boolean extracted = p.slotClick(0, 0, "quick_move", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "craft");
+                res.addProperty("mode", "result");
+                res.addProperty("extracted", extracted);
+                return Result.ok(res);
+            }
+            case "autocraft": {
+                // Same as result mode — recipe book has filled the grid
+                boolean extracted = p.slotClick(0, 0, "quick_move", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "craft");
+                res.addProperty("mode", "autocraft");
+                res.addProperty("extracted", extracted);
+                return Result.ok(res);
+            }
+            default:
+                throw ProtocolError.badRequest("unknown craft 'mode': " + mode);
         }
     }
 
