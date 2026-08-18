@@ -81,6 +81,12 @@ public final class Actions {
                 return doInventoryAction(ctx, cmd);
             case "craft":
                 return doCraft(ctx, cmd);
+            case "interact":
+                return doInteract(ctx, cmd);
+            case "trade":
+                return doTrade(ctx, cmd);
+            case "sort":
+                return doSort(ctx, cmd);
             case "equip":
                 return doEquip(ctx, cmd);
             case "hotbar":
@@ -627,6 +633,242 @@ public final class Actions {
             }
             default:
                 throw ProtocolError.badRequest("unknown craft 'mode': " + mode);
+        }
+    }
+
+    // ---- trade (v26.3-Alpha.5) ----
+
+    /**
+     * Query villager trade offers or execute a trade.
+     *
+     * <p>Query mode returns the list of offers from the currently open merchant screen.
+     * Execute mode clicks the trade result slot to perform the trade.
+     *
+     * Example (query):
+     * <pre>{@code {"type":"trade","mode":"query"}}</pre>
+     * Example (execute trade #1):
+     * <pre>{@code {"type":"trade","mode":"execute","index":0}}</pre>
+     *
+     * Requires a merchant screen (villager trading GUI) to be open.
+     * In the MerchantMenu, slot 0 is the result slot, slots 1-2 are input slots,
+     * and trade selection is done via the merchant's selectTrade method.
+     */
+    private static Result doTrade(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        String mode = Json.normalize(Json.getStr(cmd, "mode", "query"));
+
+        switch (mode) {
+            case "query": {
+                // Read the open container's merchant offers reflectively
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "trade");
+                res.addProperty("mode", "query");
+                try {
+                    Object mc = Class.forName("net.minecraft.client.Minecraft")
+                            .getMethod("getInstance").invoke(null);
+                    Object player = mc.getClass().getField("player").get(mc);
+                    Object menu = player.getClass().getField("containerMenu").get(player);
+                    if (menu != null) {
+                        // MerchantMenu has a merchant field with getOffers()
+                        try {
+                            java.lang.reflect.Field merchantField = null;
+                            Class<?> cls = menu.getClass();
+                            while (cls != null && merchantField == null) {
+                                try {
+                                    merchantField = cls.getDeclaredField("merchant");
+                                    merchantField.setAccessible(true);
+                                } catch (NoSuchFieldException e) { cls = cls.getSuperclass(); }
+                            }
+                            if (merchantField != null) {
+                                Object merchant = merchantField.get(menu);
+                                if (merchant != null) {
+                                    Object offers = merchant.getClass().getMethod("getOffers").invoke(merchant);
+                                    if (offers instanceof java.util.List<?> list) {
+                                        com.google.gson.JsonArray arr = new com.google.gson.JsonArray();
+                                        for (Object offer : list) {
+                                            JsonObject o = new JsonObject();
+                                            try {
+                                                Object resultItem = offer.getClass().getMethod("getResult").invoke(offer);
+                                                if (resultItem != null) {
+                                                    Object item = resultItem.getClass().getMethod("getItem").invoke(resultItem);
+                                                    o.addProperty("result", String.valueOf(
+                                                            net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(
+                                                                    (net.minecraft.world.item.Item) item)));
+                                                    o.addProperty("resultCount", ((Number) resultItem.getClass()
+                                                            .getMethod("getCount").invoke(resultItem)).intValue());
+                                                }
+                                            } catch (Throwable ignored) {}
+                                            try {
+                                                int uses = ((Number) offer.getClass().getMethod("getUses").invoke(offer)).intValue();
+                                                int maxUses = ((Number) offer.getClass().getMethod("getMaxUses").invoke(offer)).intValue();
+                                                o.addProperty("uses", uses);
+                                                o.addProperty("maxUses", maxUses);
+                                            } catch (Throwable ignored) {}
+                                            arr.add(o);
+                                        }
+                                        res.add("offers", arr);
+                                        res.addProperty("offerCount", arr.size());
+                                    }
+                                }
+                            }
+                        } catch (Throwable ignored) {}
+                    }
+                } catch (Throwable t) {
+                    res.addProperty("error", "trade query failed: " + t.getMessage());
+                }
+                return Result.ok(res);
+            }
+            case "execute": {
+                int index = Json.getInt(cmd, "index", 0);
+                // Select the trade by index, then click the result slot (slot 2 in MerchantMenu)
+                // In MerchantMenu, slot 2 is the result slot
+                try {
+                    Object mc = Class.forName("net.minecraft.client.Minecraft")
+                            .getMethod("getInstance").invoke(null);
+                    Object player = mc.getClass().getField("player").get(mc);
+                    Object menu = player.getClass().getField("containerMenu").get(player);
+                    if (menu != null) {
+                        // Try selectTrade(int)
+                        try {
+                            menu.getClass().getMethod("selectTrade", int.class).invoke(menu, index);
+                        } catch (NoSuchMethodException e) {
+                            // Fallback: click the trade offer slot directly
+                        }
+                    }
+                } catch (Throwable ignored) {}
+                // Click result slot (slot 2 in MerchantMenu) to execute the trade
+                boolean ok = p.slotClick(2, 0, "pickup", 0);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "trade");
+                res.addProperty("mode", "execute");
+                res.addProperty("index", index);
+                res.addProperty("dispatched", ok);
+                return Result.ok(res);
+            }
+            default:
+                throw ProtocolError.badRequest("unknown trade 'mode': " + mode);
+        }
+    }
+
+    // ---- sort (v26.3-Alpha.7) ----
+
+    /**
+     * Auto-sort the player inventory by quick-moving all main inventory slots.
+     * This effectively shift-clicks every slot in the main inventory section,
+     * causing items to auto-route to their appropriate sections (hotbar, etc.).
+     *
+     * <pre>{@code {"type":"sort"}}</pre>
+     */
+    private static Result doSort(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        // Quick-move (shift-click) each main inventory slot (9-35 in player inventory)
+        int count = 0;
+        for (int slot = 9; slot <= 35; slot++) {
+            if (p.slotClick(slot, 0, "quick_move", 0)) {
+                count++;
+            }
+        }
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "sort");
+        res.addProperty("moved", count);
+        return Result.ok(res);
+    }
+
+    // ---- interact (v26.3-Alpha.4) ----
+
+    /**
+     * Right-click interact with a block or entity at the crosshair or at specific coordinates.
+     *
+     * <p>This is a semantic wrapper around {@code useItem} that targets a specific block
+     * or entity. It opens doors, toggles levers/buttons, talks to villagers, rides minecarts, etc.
+     *
+     * <ul>
+     *   <li><b>crosshair</b>: interact with whatever the crosshair is over (default)</li>
+     *   <li><b>block</b>: interact with a block at x/y/z coordinates (look at it first)</li>
+     *   <li><b>entity</b>: interact with an entity by UUID (look at it first)</li>
+     * </ul>
+     */
+    private static Result doInteract(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        String target = Json.normalize(Json.getStr(cmd, "target", "crosshair"));
+        String hand = Json.normalize(Json.getStr(cmd, "hand", "main"));
+
+        switch (target) {
+            case "crosshair": {
+                // Just use item on whatever the crosshair is over
+                p.worldUseItem(hand);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "interact");
+                res.addProperty("target", "crosshair");
+                res.addProperty("hand", hand);
+                return Result.ok(res);
+            }
+            case "block": {
+                // Look at the block coordinates first, then use item
+                int x = Json.getInt(cmd, "x", 0);
+                int y = Json.getInt(cmd, "y", 0);
+                int z = Json.getInt(cmd, "z", 0);
+                // Use look action to face the block
+                var player = p.player();
+                if (player != null) {
+                    double eyeY = player.y() + 1.62;
+                    double dx = x + 0.5 - player.x();
+                    double dy = y + 0.5 - eyeY;
+                    double dz = z + 0.5 - player.z();
+                    double horizontal = Math.sqrt(dx * dx + dz * dz);
+                    float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+                    float pitch = Math.max(-89.9f, Math.min(89.9f,
+                            (float) -Math.toDegrees(Math.atan2(dy, horizontal))));
+                    ctx.despotes().lookSmoother().start(yaw, pitch, 0);
+                }
+                // Use item to interact with the block
+                p.worldUseItem(hand);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "interact");
+                res.addProperty("target", "block");
+                res.addProperty("x", x);
+                res.addProperty("y", y);
+                res.addProperty("z", z);
+                res.addProperty("hand", hand);
+                return Result.ok(res);
+            }
+            case "entity": {
+                // Look at the entity first, then use item
+                String uuid = Json.getStr(cmd, "uuid", "");
+                if (uuid.isBlank()) {
+                    throw ProtocolError.badRequest("interact entity requires 'uuid'");
+                }
+                var player = p.player();
+                if (player != null) {
+                    JsonObject found = p.findEntity(uuid);
+                    if (Json.getBool(found, "found", false)) {
+                        double tx = Json.getDouble(found, "x", 0);
+                        double ty = Json.getDouble(found, "y", 0);
+                        double tz = Json.getDouble(found, "z", 0);
+                        double eyeY = player.y() + 1.62;
+                        double dx = tx - player.x();
+                        double dy = ty - eyeY;
+                        double dz = tz - player.z();
+                        double horizontal = Math.sqrt(dx * dx + dz * dz);
+                        float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+                        float pitch = Math.max(-89.9f, Math.min(89.9f,
+                                (float) -Math.toDegrees(Math.atan2(dy, horizontal))));
+                        ctx.despotes().lookSmoother().start(yaw, pitch, 0);
+                    }
+                }
+                p.worldUseItem(hand);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "interact");
+                res.addProperty("target", "entity");
+                res.addProperty("uuid", uuid);
+                res.addProperty("hand", hand);
+                return Result.ok(res);
+            }
+            default:
+                throw ProtocolError.badRequest("unknown interact 'target': " + target);
         }
     }
 
