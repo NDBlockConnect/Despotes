@@ -14,6 +14,7 @@ import dev.despotes.common.transport.CliTransport;
 import dev.despotes.common.transport.ControlTransport;
 import dev.despotes.common.transport.FileDropTransport;
 import dev.despotes.common.transport.HttpTransport;
+import dev.despotes.common.transport.WsTransport;
 import dev.despotes.common.viz.OpLog;
 import dev.despotes.common.viz.Overlay;
 
@@ -31,7 +32,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.6";
+    public static final String VERSION = "v26.7-Alpha.1";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -112,6 +113,12 @@ public final class Despotes {
             FileDropTransport fd = new FileDropTransport();
             transports.add(fd);
             fd.start(this);
+        }
+        // v26.8: WebSocket transport
+        if (config.http.enabled && config.sourceEnabled("ws")) {
+            WsTransport ws = new WsTransport();
+            transports.add(ws);
+            ws.start(this);
         }
     }
 

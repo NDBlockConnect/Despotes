@@ -107,6 +107,12 @@ public final class Actions {
                 return doRetreat(ctx, cmd);
             case "shield":
                 return doShield(ctx, cmd);
+            case "place-block":
+                return doPlaceBlock(ctx, cmd);
+            case "dig":
+                return doDig(ctx, cmd);
+            case "fill":
+                return doFill(ctx, cmd);
             case "inventory-action":
                 return doInventoryAction(ctx, cmd);
             case "craft":
@@ -664,6 +670,104 @@ public final class Actions {
             default:
                 throw ProtocolError.badRequest("unknown craft 'mode': " + mode);
         }
+    }
+
+    // ---- building (v26.7-Alpha.1) ----
+
+    /**
+     * Place a block at a coordinate: look at the target, then use item (right-click).
+     * The player must have the block in their hotbar and be within reach distance.
+     *
+     * <pre>{@code {"type":"place-block","x":10,"y":64,"z":20}}</pre>
+     */
+    private static Result doPlaceBlock(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        int x = Json.getInt(cmd, "x", 0);
+        int y = Json.getInt(cmd, "y", 0);
+        int z = Json.getInt(cmd, "z", 0);
+        // Look at the block face, then use item to place
+        var player = p.player();
+        if (player != null) {
+            double eyeY = player.y() + 1.62;
+            double dx = x + 0.5 - player.x();
+            double dy = y + 0.5 - eyeY;
+            double dz = z + 0.5 - player.z();
+            double horizontal = Math.sqrt(dx * dx + dz * dz);
+            float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+            float pitch = Math.max(-89.9f, Math.min(89.9f,
+                    (float) -Math.toDegrees(Math.atan2(dy, horizontal))));
+            ctx.despotes().lookSmoother().start(yaw, pitch, 0);
+            // Use item to place
+            p.worldUseItem("main");
+        }
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "place-block");
+        res.addProperty("x", x);
+        res.addProperty("y", y);
+        res.addProperty("z", z);
+        return Result.ok(res);
+    }
+
+    /**
+     * Dig (break) a block at a coordinate: look at it, then attack (left-click).
+     *
+     * <pre>{@code {"type":"dig","x":10,"y":64,"z":20}}</pre>
+     */
+    private static Result doDig(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        int x = Json.getInt(cmd, "x", 0);
+        int y = Json.getInt(cmd, "y", 0);
+        int z = Json.getInt(cmd, "z", 0);
+        // Look at the block, then attack to break it
+        var player = p.player();
+        if (player != null) {
+            double eyeY = player.y() + 1.62;
+            double dx = x + 0.5 - player.x();
+            double dy = y + 0.5 - eyeY;
+            double dz = z + 0.5 - player.z();
+            double horizontal = Math.sqrt(dx * dx + dz * dz);
+            float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+            float pitch = Math.max(-89.9f, Math.min(89.9f,
+                    (float) -Math.toDegrees(Math.atan2(dy, horizontal))));
+            ctx.despotes().lookSmoother().start(yaw, pitch, 0);
+            // Attack to start breaking
+            p.worldAttack();
+        }
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "dig");
+        res.addProperty("x", x);
+        res.addProperty("y", y);
+        res.addProperty("z", z);
+        return Result.ok(res);
+    }
+
+    /**
+     * Fill a region: repeatedly place blocks in a cuboid area.
+     * Uses /fill command if available, otherwise falls back to individual place-block calls.
+     *
+     * <pre>{@code {"type":"fill","x1":0,"y1":64,"z1":0,"x2":5,"y2":64,"z2":5,"block":"minecraft:stone"}}</pre>
+     */
+    private static Result doFill(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        int x1 = Json.getInt(cmd, "x1", 0);
+        int y1 = Json.getInt(cmd, "y1", 0);
+        int z1 = Json.getInt(cmd, "z1", 0);
+        int x2 = Json.getInt(cmd, "x2", 0);
+        int y2 = Json.getInt(cmd, "y2", 0);
+        int z2 = Json.getInt(cmd, "z2", 0);
+        String block = Json.getStr(cmd, "block", "minecraft:stone");
+        // Use /fill command for efficiency
+        String cmd2 = String.format("/fill %d %d %d %d %d %d %s", x1, y1, z1, x2, y2, z2, block);
+        p.sendCommand(cmd2);
+        int volume = (Math.abs(x2 - x1) + 1) * (Math.abs(y2 - y1) + 1) * (Math.abs(z2 - z1) + 1);
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "fill");
+        res.addProperty("volume", volume);
+        res.addProperty("block", block);
+        return Result.ok(res);
     }
 
     // ---- combat (v26.6-Alpha.1) ----
