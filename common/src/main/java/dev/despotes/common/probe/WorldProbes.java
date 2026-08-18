@@ -329,13 +329,209 @@ public final class WorldProbes {
         return o;
     }
 
-    /**
-     * v26.3-Alpha.2: recipe book readout. Returns the list of recipes the player has
-     * unlocked, plus the ones currently highlighted/highlightable. Reflective across
-     * versions: MC 26.x uses {@code RecipeBook} with {@code getHighlighted()} and
-     * {@code getKnown()}, while 1.20.x/1.21.x use {@code ClientRecipeBook} with similar
-     * methods. Each recipe entry carries the recipe id and result item id.
-     */
+    /** v26.4-Alpha.1: nearby players query (name/UUID/distance/health/gear). */
+    public static JsonObject players(net.minecraft.client.Minecraft mc, double radius) {
+        JsonObject o = new JsonObject();
+        var level = mc.level;
+        var player = mc.player;
+        if (level == null || player == null) {
+            o.add("players", new JsonArray());
+            return o;
+        }
+        AABB box = new AABB(player.blockPosition()).inflate(radius);
+        JsonArray arr = new JsonArray();
+        level.getEntitiesOfClass(net.minecraft.world.entity.player.Player.class, box,
+                        e -> e != player && e.distanceTo(player) <= radius)
+                .stream()
+                .sorted(Comparator.comparingDouble(player::distanceTo))
+                .limit(20)
+                .forEach(e -> {
+                    JsonObject j = new JsonObject();
+                    j.addProperty("name", e.getName().getString());
+                    j.addProperty("uuid", e.getStringUUID());
+                    j.addProperty("x", e.getX());
+                    j.addProperty("y", e.getY());
+                    j.addProperty("z", e.getZ());
+                    j.addProperty("distance", Math.round(e.distanceTo(player) * 100) / 100.0);
+                    j.addProperty("health", e.getHealth());
+                    j.addProperty("armor", callInt(e, "getArmorValue"));
+                    j.addProperty("sprinting", callBool(e, "isSprinting"));
+                    j.addProperty("sneaking", callBool(e, "isShiftKeyDown"));
+                    arr.add(j);
+                });
+        o.addProperty("radius", radius);
+        o.addProperty("count", arr.size());
+        o.add("players", arr);
+        return o;
+    }
+
+    /** v26.4-Alpha.2: server info query (MOTD, online count, ping). */
+    public static JsonObject server(net.minecraft.client.Minecraft mc) {
+        JsonObject o = new JsonObject();
+        try {
+            Object conn = mc.getClass().getMethod("getConnection").invoke(mc);
+            if (conn == null) {
+                o.addProperty("connected", false);
+                return o;
+            }
+            o.addProperty("connected", true);
+            // Server data
+            Object serverData = call(mc, "getCurrentServer");
+            if (serverData != null) {
+                o.addProperty("ip", callStr(serverData, "ip"));
+                o.addProperty("name", callStr(serverData, "name"));
+                o.addProperty("motd", callStr(serverData, "motd"));
+                o.addProperty("ping", callLong(serverData, "ping"));
+            }
+            // Online player count from connection
+            o.addProperty("onlinePlayers", callInt(conn, "getOnlinePlayers"));
+        } catch (Throwable t) {
+            o.addProperty("error", "server query failed: " + t.getMessage());
+        }
+        return o;
+    }
+
+    /** v26.4-Alpha.3: tablist query (player names with latency). */
+    public static JsonObject tablist(net.minecraft.client.Minecraft mc) {
+        JsonObject o = new JsonObject();
+        try {
+            Object playerList = null;
+            // getConnection().getList() or getOnlinePlayers()
+            Object conn = mc.getClass().getMethod("getConnection").invoke(mc);
+            if (conn != null) {
+                // ClientPacketListener.getPlayerInfoMap() / getOnlinePlayers()
+                for (String mn : new String[]{"getPlayerInfoMap", "getOnlinePlayers", "getList"}) {
+                    try {
+                        Object result = conn.getClass().getMethod(mn).invoke(conn);
+                        if (result instanceof Collection<?> c) {
+                            JsonArray arr = new JsonArray();
+                            for (Object info : c) {
+                                JsonObject j = new JsonObject();
+                                // PlayerInfo.getName() / getProfile().getName()
+                                try {
+                                    Object profile = info.getClass().getMethod("getProfile").invoke(info);
+                                    String name = (String) profile.getClass().getMethod("getName").invoke(profile);
+                                    j.addProperty("name", name != null ? name : "");
+                                } catch (Throwable ignored) {}
+                                try {
+                                    int latency = ((Number) info.getClass().getMethod("getLatency").invoke(info)).intValue();
+                                    j.addProperty("latency", latency);
+                                } catch (Throwable ignored) {}
+                                try {
+                                    int gamemode = ((Number) info.getClass().getMethod("getGameMode").invoke(info)).intValue();
+                                    j.addProperty("gamemode", gamemode);
+                                } catch (Throwable ignored) {}
+                                arr.add(j);
+                            }
+                            o.add("players", arr);
+                            o.addProperty("count", arr.size());
+                            break;
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            }
+        } catch (Throwable t) {
+            o.addProperty("error", "tablist query failed: " + t.getMessage());
+        }
+        return o;
+    }
+
+    /** v26.4-Alpha.4: scoreboard query (teams, scores, objectives). */
+    public static JsonObject scoreboard(net.minecraft.client.Minecraft mc) {
+        JsonObject o = new JsonObject();
+        try {
+            if (mc.level == null) {
+                o.addProperty("inWorld", false);
+                return o;
+            }
+            Object scoreboard = mc.level.getClass().getMethod("getScoreboard").invoke(mc.level);
+            if (scoreboard == null) return o;
+            // Teams
+            JsonArray teams = new JsonArray();
+            try {
+                Object teamCollection = scoreboard.getClass().getMethod("getPlayerTeams").invoke(scoreboard);
+                if (teamCollection instanceof Collection<?> c) {
+                    for (Object team : c) {
+                        JsonObject t = new JsonObject();
+                        try { t.addProperty("name", (String) team.getClass().getMethod("getName").invoke(team)); } catch (Throwable ignored) {}
+                        try { t.addProperty("displayName", ((net.minecraft.network.chat.Component) team.getClass().getMethod("getDisplayName").invoke(team)).getString()); } catch (Throwable ignored) {}
+                        try { t.addProperty("color", String.valueOf(team.getClass().getMethod("getColor").invoke(team))); } catch (Throwable ignored) {}
+                        teams.add(t);
+                    }
+                }
+            } catch (Throwable ignored) {}
+            o.add("teams", teams);
+            // Objectives
+            JsonArray objectives = new JsonArray();
+            try {
+                Object objCollection = scoreboard.getClass().getMethod("getObjectives").invoke(scoreboard);
+                if (objCollection instanceof Collection<?> c) {
+                    for (Object obj : c) {
+                        JsonObject ob = new JsonObject();
+                        try { ob.addProperty("name", (String) obj.getClass().getMethod("getName").invoke(obj)); } catch (Throwable ignored) {}
+                        try { ob.addProperty("displayName", ((net.minecraft.network.chat.Component) obj.getClass().getMethod("getDisplayName").invoke(obj)).getString()); } catch (Throwable ignored) {}
+                        try { ob.addProperty("criteria", String.valueOf(obj.getClass().getMethod("getCriteria").invoke(obj))); } catch (Throwable ignored) {}
+                        objectives.add(ob);
+                    }
+                }
+            } catch (Throwable ignored) {}
+            o.add("objectives", objectives);
+        } catch (Throwable t) {
+            o.addProperty("error", "scoreboard query failed: " + t.getMessage());
+        }
+        return o;
+    }
+
+    /** v26.4-Alpha.7: coords query (spawn, world border, key locations). */
+    public static JsonObject coords(net.minecraft.client.Minecraft mc) {
+        JsonObject o = new JsonObject();
+        if (mc.level == null || mc.player == null) {
+            o.addProperty("inWorld", false);
+            return o;
+        }
+        // Spawn point
+        try {
+            Object spawnPos = mc.level.getClass().getMethod("getSharedSpawnPos").invoke(mc.level);
+            if (spawnPos != null) {
+                JsonObject s = new JsonObject();
+                s.addProperty("x", ((Number) spawnPos.getClass().getMethod("getX").invoke(spawnPos)).intValue());
+                s.addProperty("y", ((Number) spawnPos.getClass().getMethod("getY").invoke(spawnPos)).intValue());
+                s.addProperty("z", ((Number) spawnPos.getClass().getMethod("getZ").invoke(spawnPos)).intValue());
+                o.add("spawn", s);
+            }
+        } catch (Throwable ignored) {}
+        // World border
+        try {
+            Object border = mc.level.getClass().getMethod("getWorldBorder").invoke(mc.level);
+            if (border != null) {
+                JsonObject b = new JsonObject();
+                b.addProperty("centerX", ((Number) border.getClass().getMethod("getCenterX").invoke(border)).doubleValue());
+                b.addProperty("centerZ", ((Number) border.getClass().getMethod("getCenterZ").invoke(border)).doubleValue());
+                b.addProperty("size", ((Number) border.getClass().getMethod("getSize").invoke(border)).doubleValue());
+                b.addProperty("damageSafeZone", ((Number) border.getClass().getMethod("getDamageSafeZone").invoke(border)).doubleValue());
+                b.addProperty("damagePerBlock", ((Number) border.getClass().getMethod("getDamagePerBlock").invoke(border)).doubleValue());
+                o.add("worldBorder", b);
+            }
+        } catch (Throwable ignored) {}
+        // Player position
+        JsonObject pos = new JsonObject();
+        pos.addProperty("x", mc.player.getX());
+        pos.addProperty("y", mc.player.getY());
+        pos.addProperty("z", mc.player.getZ());
+        o.add("player", pos);
+        return o;
+    }
+
+    private static String callStr(Object o, String method) {
+        try {
+            Object v = resolve(o, method).invoke(o);
+            return v == null ? "" : v.toString();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** v26.3-Alpha.2: recipe book readout (known + highlighted recipes). */
     @SuppressWarnings("unchecked")
     public static JsonObject recipes(net.minecraft.client.Minecraft mc) {
         JsonObject o = new JsonObject();

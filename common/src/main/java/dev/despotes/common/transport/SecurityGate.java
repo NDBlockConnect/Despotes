@@ -159,6 +159,8 @@ public final class SecurityGate {
                 || type.equals("query") || type.equals("recipe") || type.equals("recipes")
                 || type.equals("inventory") || type.equals("self") || type.equals("threats")
                 || type.equals("world") || type.equals("blocks") || type.equals("entities")
-                || type.equals("target") || type.equals("container");
+                || type.equals("target") || type.equals("container")
+                || type.equals("players") || type.equals("server") || type.equals("tablist")
+                || type.equals("scoreboard") || type.equals("coords");
     }
 }

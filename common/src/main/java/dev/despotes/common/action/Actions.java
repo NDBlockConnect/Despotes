@@ -77,6 +77,19 @@ public final class Actions {
             case "recipe":
             case "recipes":
                 return Result.ok(ctx.despotes().platform().probeRecipes());
+            case "players":
+                return Result.ok(ctx.despotes().platform()
+                        .probePlayers(Json.getDouble(cmd, "radius", 64)));
+            case "server":
+                return Result.ok(ctx.despotes().platform().probeServer());
+            case "tablist":
+                return Result.ok(ctx.despotes().platform().probeTablist());
+            case "scoreboard":
+                return Result.ok(ctx.despotes().platform().probeScoreboard());
+            case "coords":
+                return Result.ok(ctx.despotes().platform().probeCoords());
+            case "whisper":
+                return doWhisper(ctx, cmd);
             case "inventory-action":
                 return doInventoryAction(ctx, cmd);
             case "craft":
@@ -634,6 +647,28 @@ public final class Actions {
             default:
                 throw ProtocolError.badRequest("unknown craft 'mode': " + mode);
         }
+    }
+
+    // ---- whisper (v26.4-Alpha.6) ----
+
+    /**
+     * Send a private message to another player via /msg.
+     *
+     * <pre>{@code {"type":"whisper","target":"PlayerName","message":"hello"}}</pre>
+     */
+    private static Result doWhisper(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        String target = Json.getStr(cmd, "target", "");
+        String message = Json.getStr(cmd, "message", "");
+        if (target.isBlank() || message.isBlank()) {
+            throw ProtocolError.badRequest("whisper requires 'target' and 'message'");
+        }
+        p.sendCommand("/msg " + target + " " + message);
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "whisper");
+        res.addProperty("target", target);
+        res.addProperty("chars", message.length());
+        return Result.ok(res);
     }
 
     // ---- trade (v26.3-Alpha.5) ----

@@ -411,6 +411,66 @@ public interface IGamePlatform {
         }
     }
 
+    /** v26.4-Alpha.1: nearby players query. */
+    default com.google.gson.JsonObject probePlayers(double radius) {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.players(
+                    (net.minecraft.client.Minecraft) mc, radius);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
+    /** v26.4-Alpha.2: server info query. */
+    default com.google.gson.JsonObject probeServer() {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.server(
+                    (net.minecraft.client.Minecraft) mc);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
+    /** v26.4-Alpha.3: tablist query. */
+    default com.google.gson.JsonObject probeTablist() {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.tablist(
+                    (net.minecraft.client.Minecraft) mc);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
+    /** v26.4-Alpha.4: scoreboard query. */
+    default com.google.gson.JsonObject probeScoreboard() {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.scoreboard(
+                    (net.minecraft.client.Minecraft) mc);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
+    /** v26.4-Alpha.7: coords query (spawn, world border, player position). */
+    default com.google.gson.JsonObject probeCoords() {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.coords(
+                    (net.minecraft.client.Minecraft) mc);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
     /**
      * v26.2 death awareness: respawn the dead player. Reflective across versions —
      * {@code LocalPlayer.respawn()} exists under the same official name on every supported
