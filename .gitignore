@@ -49,3 +49,4 @@ replay_pid*
 # OS
 .DS_Store
 Thumbs.db
+.opencode-data/
