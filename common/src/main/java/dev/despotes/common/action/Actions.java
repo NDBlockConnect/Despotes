@@ -98,6 +98,15 @@ public final class Actions {
             case "stopnav":
                 ctx.despotes().navigator().stop();
                 return Result.ok("stopped");
+            case "attack-entity":
+                return doAttackEntity(ctx, cmd);
+            case "combat":
+                return Result.ok(ctx.despotes().platform()
+                        .probeThreats(Json.getDouble(cmd, "radius", 16)));
+            case "retreat":
+                return doRetreat(ctx, cmd);
+            case "shield":
+                return doShield(ctx, cmd);
             case "inventory-action":
                 return doInventoryAction(ctx, cmd);
             case "craft":
@@ -655,6 +664,100 @@ public final class Actions {
             default:
                 throw ProtocolError.badRequest("unknown craft 'mode': " + mode);
         }
+    }
+
+    // ---- combat (v26.6-Alpha.1) ----
+
+    /**
+     * Attack an entity by UUID: look at it, then perform an attack.
+     *
+     * <pre>{@code {"type":"attack-entity","uuid":"12345678-..."}}</pre>
+     */
+    private static Result doAttackEntity(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        String uuid = Json.getStr(cmd, "uuid", "");
+        if (uuid.isBlank()) {
+            throw ProtocolError.badRequest("attack-entity requires 'uuid'");
+        }
+        // Look at the entity
+        var player = p.player();
+        if (player != null) {
+            JsonObject found = p.findEntity(uuid);
+            if (Json.getBool(found, "found", false)) {
+                double tx = Json.getDouble(found, "x", 0);
+                double ty = Json.getDouble(found, "y", 0);
+                double tz = Json.getDouble(found, "z", 0);
+                double eyeY = player.y() + 1.62;
+                double dx = tx - player.x();
+                double dy = ty - eyeY;
+                double dz = tz - player.z();
+                double horizontal = Math.sqrt(dx * dx + dz * dz);
+                float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+                float pitch = Math.max(-89.9f, Math.min(89.9f,
+                        (float) -Math.toDegrees(Math.atan2(dy, horizontal))));
+                ctx.despotes().lookSmoother().start(yaw, pitch, 0);
+                // Small delay for look to apply, then attack
+                ctx.despotes().dispatcher().scheduleInTicks(1, p::worldAttack);
+            } else {
+                throw ProtocolError.badRequest("entity not found: " + uuid);
+            }
+        }
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "attack-entity");
+        res.addProperty("uuid", uuid);
+        return Result.ok(res);
+    }
+
+    /**
+     * Retreat from the nearest threat: move away from the closest hostile.
+     *
+     * <pre>{@code {"type":"retreat","distance":10}}</pre>
+     */
+    private static Result doRetreat(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        double radius = Json.getDouble(cmd, "radius", 16);
+        var threats = p.probeThreats(radius);
+        var player = p.player();
+        if (player == null) throw ProtocolError.notInGame();
+
+        if (threats.has("threats") && threats.getAsJsonArray("threats").size() > 0) {
+            var first = threats.getAsJsonArray("threats").get(0).getAsJsonObject();
+            double tx = first.get("x").getAsDouble();
+            double ty = first.get("y").getAsDouble();
+            double tz = first.get("z").getAsDouble();
+            // Direction away from threat
+            double dx = player.x() - tx;
+            double dz = player.z() - tz;
+            double len = Math.sqrt(dx * dx + dz * dz);
+            if (len > 0.01) {
+                double retreatX = player.x() + (dx / len) * 10;
+                double retreatZ = player.z() + (dz / len) * 10;
+                ctx.despotes().navigator().gotoCoords(retreatX, player.y(), retreatZ, 1.5);
+            }
+        }
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "retreat");
+        res.addProperty("threatCount", threats.has("count") ? threats.get("count").getAsInt() : 0);
+        return Result.ok(res);
+    }
+
+    /**
+     * Raise or lower shield (right-click with shield equipped).
+     *
+     * <pre>{@code {"type":"shield","op":"raise"|"lower"}}</pre>
+     */
+    private static Result doShield(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        String op = Json.normalize(Json.getStr(cmd, "op", "raise"));
+        boolean press = op.equals("raise");
+        p.worldUseItem("main");
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "shield");
+        res.addProperty("op", op);
+        return Result.ok(res);
     }
 
     // ---- goto (v26.5-Alpha.1) ----
