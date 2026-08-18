@@ -90,6 +90,14 @@ public final class Actions {
                 return Result.ok(ctx.despotes().platform().probeCoords());
             case "whisper":
                 return doWhisper(ctx, cmd);
+            case "goto":
+                return doGoto(ctx, cmd);
+            case "follow":
+                return doFollow(ctx, cmd);
+            case "stop-nav":
+            case "stopnav":
+                ctx.despotes().navigator().stop();
+                return Result.ok("stopped");
             case "inventory-action":
                 return doInventoryAction(ctx, cmd);
             case "craft":
@@ -647,6 +655,58 @@ public final class Actions {
             default:
                 throw ProtocolError.badRequest("unknown craft 'mode': " + mode);
         }
+    }
+
+    // ---- goto (v26.5-Alpha.1) ----
+
+    /**
+     * Navigate to a coordinate or entity. Uses the {@link dev.despotes.common.nav.PathNavigator}
+     * which runs on the client thread each tick, driving movement towards the target.
+     *
+     * <pre>{@code
+     * {"type":"goto","x":100,"y":64,"z":200,"stopDistance":2.0}
+     * {"type":"goto","uuid":"12345678-...","stopDistance":3.0}
+     * }</pre>
+     */
+    private static Result doGoto(ActionContext ctx, JsonObject cmd) {
+        ctx.requireInGame();
+        String uuid = Json.getStr(cmd, "uuid", "");
+        double stopDist = Json.getDouble(cmd, "stopDistance", 1.5);
+        boolean ok;
+        if (!uuid.isBlank()) {
+            ok = ctx.despotes().navigator().followEntity(uuid, stopDist);
+        } else {
+            double x = Json.getDouble(cmd, "x", 0);
+            double y = Json.getDouble(cmd, "y", 0);
+            double z = Json.getDouble(cmd, "z", 0);
+            ok = ctx.despotes().navigator().gotoCoords(x, y, z, stopDist);
+        }
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "goto");
+        res.addProperty("started", ok);
+        return Result.ok(res);
+    }
+
+    // ---- follow (v26.5-Alpha.2) ----
+
+    /**
+     * Follow an entity by UUID, maintaining a stop distance.
+     *
+     * <pre>{@code {"type":"follow","uuid":"12345678-...","stopDistance":3.0}}</pre>
+     */
+    private static Result doFollow(ActionContext ctx, JsonObject cmd) {
+        ctx.requireInGame();
+        String uuid = Json.getStr(cmd, "uuid", "");
+        if (uuid.isBlank()) {
+            throw ProtocolError.badRequest("follow requires 'uuid'");
+        }
+        double stopDist = Json.getDouble(cmd, "stopDistance", 3.0);
+        boolean ok = ctx.despotes().navigator().followEntity(uuid, stopDist);
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "follow");
+        res.addProperty("started", ok);
+        res.addProperty("uuid", uuid);
+        return Result.ok(res);
     }
 
     // ---- whisper (v26.4-Alpha.6) ----

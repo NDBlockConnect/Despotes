@@ -7,6 +7,7 @@ import dev.despotes.common.events.EventBus;
 import dev.despotes.common.focus.FocusManager;
 import dev.despotes.common.lifecycle.LifeCycleMonitor;
 import dev.despotes.common.look.LookSmoother;
+import dev.despotes.common.nav.PathNavigator;
 import dev.despotes.common.perf.LatencyStats;
 import dev.despotes.common.platform.IGamePlatform;
 import dev.despotes.common.transport.CliTransport;
@@ -30,7 +31,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.4";
+    public static final String VERSION = "v26.5-Alpha.1";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -45,6 +46,7 @@ public final class Despotes {
     private final Overlay overlay;
     private final LifeCycleMonitor lifeCycle;
     private final LatencyStats latency = new LatencyStats();
+    private final PathNavigator navigator;
     private final List<ControlTransport> transports = new ArrayList<>();
     private final Path configPath;
 
@@ -58,6 +60,7 @@ public final class Despotes {
         this.overlay = new Overlay(config);
         this.dispatcher = new Dispatcher(this);
         this.lifeCycle = new LifeCycleMonitor(this);
+        this.navigator = new PathNavigator(this);
     }
 
     /** Boots Despotes. Safe to call multiple times; only the first call has an effect. */
@@ -116,6 +119,7 @@ public final class Despotes {
     public void clientTick() {
         focusManager.tick(config);
         lifeCycle.tick();
+        navigator.tick();
         dispatcher.tick();
     }
 
@@ -175,6 +179,11 @@ public final class Despotes {
 
     public LifeCycleMonitor lifeCycle() {
         return lifeCycle;
+    }
+
+    /** v26.5: path navigator for goto/follow actions. */
+    public PathNavigator navigator() {
+        return navigator;
     }
 
     /** v26.2-Alpha.6: rolling control-channel latency statistics. */
