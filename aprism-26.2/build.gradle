@@ -15,7 +15,7 @@ java {
 }
 
 def mcClient = file("C:/Users/Sails/AppData/Local/mdl/versions/26.2/26.2.jar")
-def aprismApi = file("C:/Users/Sails/Documents/Workspace/NormalWorkspace/Coding/Minecraft/Aprism/Aprism/aprism-api/build/classes/java/main")
+def aprismApi = file("C:/Users/Sails/AppData/Roaming/mdl/aprism/Aprism-v26.4-JE-26.2.jar")
 
 dependencies {
     compileOnly files(mcClient)

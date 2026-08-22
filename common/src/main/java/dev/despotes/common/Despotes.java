@@ -10,6 +10,8 @@ import dev.despotes.common.look.LookSmoother;
 import dev.despotes.common.nav.PathNavigator;
 import dev.despotes.common.perf.LatencyStats;
 import dev.despotes.common.platform.IGamePlatform;
+import dev.despotes.common.schedule.ScheduleManager;
+import dev.despotes.common.macro.MacroRecorder;
 import dev.despotes.common.transport.CliTransport;
 import dev.despotes.common.transport.ControlTransport;
 import dev.despotes.common.transport.FileDropTransport;
@@ -32,7 +34,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.8";
+    public static final String VERSION = "v26.9-Alpha.1";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -48,6 +50,8 @@ public final class Despotes {
     private final LifeCycleMonitor lifeCycle;
     private final LatencyStats latency = new LatencyStats();
     private final PathNavigator navigator;
+    private final ScheduleManager scheduleManager = new ScheduleManager();
+    private final MacroRecorder macroRecorder = new MacroRecorder();
     private final List<ControlTransport> transports = new ArrayList<>();
     private final Path configPath;
 
@@ -127,6 +131,8 @@ public final class Despotes {
         focusManager.tick(config);
         lifeCycle.tick();
         navigator.tick();
+        scheduleManager.tick(this);
+        macroRecorder.tick(this);
         dispatcher.tick();
     }
 
@@ -191,6 +197,16 @@ public final class Despotes {
     /** v26.5: path navigator for goto/follow actions. */
     public PathNavigator navigator() {
         return navigator;
+    }
+
+    /** v26.9: periodic command scheduler. */
+    public ScheduleManager scheduleManager() {
+        return scheduleManager;
+    }
+
+    /** v26.9: action sequence recorder and player. */
+    public MacroRecorder macroRecorder() {
+        return macroRecorder;
     }
 
     /** v26.2-Alpha.6: rolling control-channel latency statistics. */

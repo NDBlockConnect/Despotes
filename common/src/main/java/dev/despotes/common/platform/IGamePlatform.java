@@ -511,6 +511,18 @@ public interface IGamePlatform {
         }
     }
 
+    /** v26.9-Alpha.1: redstone signal query at a block position. */
+    default com.google.gson.JsonObject probeRedstone(int x, int y, int z) {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.redstone(
+                    (net.minecraft.client.Minecraft) mc, x, y, z);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
     /** Current open screen object via the gui helper, or null. Reflective across versions. */
     private static Object currentScreen(Object mc) {
         try {

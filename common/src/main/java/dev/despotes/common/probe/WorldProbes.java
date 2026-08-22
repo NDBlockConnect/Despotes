@@ -963,4 +963,67 @@ public final class WorldProbes {
         j.addProperty("distance", Math.round(e.distanceTo(player) * 100) / 100.0);
         return j;
     }
+
+    /**
+     * v26.9-Alpha.1: redstone signal query. Reads the signal strength at a block position
+     * and scans the 6 adjacent faces for signal sources.
+     */
+    public static JsonObject redstone(Minecraft mc, int x, int y, int z) {
+        JsonObject o = new JsonObject();
+        var level = mc.level;
+        if (level == null) {
+            o.addProperty("inWorld", false);
+            return o;
+        }
+        o.addProperty("inWorld", true);
+        BlockPos pos = new BlockPos(x, y, z);
+        BlockState state = level.getBlockState(pos);
+        o.addProperty("x", x);
+        o.addProperty("y", y);
+        o.addProperty("z", z);
+        o.addProperty("block", String.valueOf(BuiltInRegistries.BLOCK.getKey(state.getBlock())));
+
+        // Read signal strength at this position
+        try {
+            Method getSignal = level.getClass().getMethod("getSignal", BlockPos.class, net.minecraft.core.Direction.class);
+            int maxSignal = 0;
+            for (var dir : net.minecraft.core.Direction.values()) {
+                int signal = (int) getSignal.invoke(level, pos, dir);
+                if (signal > maxSignal) maxSignal = signal;
+            }
+            o.addProperty("signal", maxSignal);
+        } catch (Throwable t) {
+            o.addProperty("signal", -1);
+        }
+
+        // Check direct signal from each face
+        try {
+            Method getDirectSignal = level.getClass().getMethod("getDirectSignal", BlockPos.class);
+            int direct = (int) getDirectSignal.invoke(level, pos);
+            o.addProperty("directSignal", direct);
+        } catch (Throwable t) {
+            o.addProperty("directSignal", -1);
+        }
+
+        // Scan adjacent blocks for redstone components
+        JsonArray adjacent = new JsonArray();
+        for (var dir : net.minecraft.core.Direction.values()) {
+            BlockPos adj = pos.relative(dir);
+            BlockState adjState = level.getBlockState(adj);
+            String blockId = String.valueOf(BuiltInRegistries.BLOCK.getKey(adjState.getBlock()));
+            if (blockId.contains("redstone") || blockId.contains("lever") || 
+                blockId.contains("button") || blockId.contains("torch") ||
+                blockId.contains("repeater") || blockId.contains("comparator")) {
+                JsonObject j = new JsonObject();
+                j.addProperty("block", blockId);
+                j.addProperty("face", dir.getName());
+                j.addProperty("x", adj.getX());
+                j.addProperty("y", adj.getY());
+                j.addProperty("z", adj.getZ());
+                adjacent.add(j);
+            }
+        }
+        o.add("adjacent", adjacent);
+        return o;
+    }
 }
