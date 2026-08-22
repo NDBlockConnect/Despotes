@@ -138,6 +138,14 @@ public final class Actions {
             case "config-reload":
                 ctx.despotes().reloadConfig();
                 return Result.ok("config-reload");
+            case "redstone":
+                return doRedstone(ctx, cmd);
+            case "schedule":
+                return doSchedule(ctx, cmd);
+            case "macro":
+                return doMacro(ctx, cmd);
+            case "condition":
+                return doCondition(ctx, cmd);
             default:
                 throw ProtocolError.unknownType(type);
         }
@@ -1538,6 +1546,287 @@ public final class Actions {
         JsonObject res = new JsonObject();
         res.addProperty("queueSize", ctx.despotes().dispatcher().queueSize());
         res.add("executing", ctx.despotes().dispatcher().executingJson());
+        return Result.ok(res);
+    }
+
+    // ---- redstone query (v26.9-Alpha.1) ----
+
+    /**
+     * Redstone signal query at a block position:
+     * {"type":"redstone","x":0,"y":64,"z":0}
+     * Returns signal strength, direct signal, and adjacent redstone components.
+     * When no coordinates given, queries the crosshair target block.
+     */
+    private static Result doRedstone(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        int x;
+        int y;
+        int z;
+        if (cmd.has("x") && cmd.has("y") && cmd.has("z")) {
+            x = Json.getInt(cmd, "x", 0);
+            y = Json.getInt(cmd, "y", 0);
+            z = Json.getInt(cmd, "z", 0);
+        } else {
+            // Fall back to crosshair target
+            JsonObject target = p.probeTarget();
+            if (!target.has("x")) {
+                throw ProtocolError.badRequest("redstone requires 'x'/'y'/'z' or a crosshair block target");
+            }
+            x = (int) Json.getDouble(target, "x", 0);
+            y = (int) Json.getDouble(target, "y", 0);
+            z = (int) Json.getDouble(target, "z", 0);
+        }
+        return Result.ok(p.probeRedstone(x, y, z));
+    }
+
+    // ---- schedule (v26.9-Alpha.1) ----
+
+    /**
+     * Periodic command scheduler:
+     * {"type":"schedule","op":"add","name":"loop1","periodTicks":20,"commands":[...]}
+     * {"type":"schedule","op":"remove","name":"loop1"}
+     * {"type":"schedule","op":"clear"}
+     * {"type":"schedule","op":"status"}
+     */
+    private static Result doSchedule(ActionContext ctx, JsonObject cmd) {
+        var mgr = ctx.despotes().scheduleManager();
+        String op = Json.normalize(Json.getStr(cmd, "op", "status"));
+        switch (op) {
+            case "add": {
+                String name = Json.getStr(cmd, "name", "");
+                if (name.isBlank()) throw ProtocolError.badRequest("'name' is required");
+                int period = Json.getInt(cmd, "periodTicks", 20);
+                if (period < 1) period = 1;
+                JsonArray commands = cmd.has("commands") && cmd.get("commands").isJsonArray()
+                        ? cmd.getAsJsonArray("commands") : null;
+                if (commands == null || commands.isEmpty()) {
+                    throw ProtocolError.badRequest("'commands' array is required");
+                }
+                long id = mgr.add(name, period, commands);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "schedule");
+                res.addProperty("op", "add");
+                res.addProperty("name", name);
+                res.addProperty("id", id);
+                res.addProperty("periodTicks", period);
+                res.addProperty("commandCount", commands.size());
+                return Result.ok(res);
+            }
+            case "remove": {
+                String name = Json.getStr(cmd, "name", "");
+                boolean ok = mgr.remove(name);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "schedule");
+                res.addProperty("op", "remove");
+                res.addProperty("name", name);
+                res.addProperty("removed", ok);
+                return Result.ok(res);
+            }
+            case "clear": {
+                mgr.clear();
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "schedule");
+                res.addProperty("op", "clear");
+                return Result.ok(res);
+            }
+            default: // status
+                return Result.ok(mgr.statusJson());
+        }
+    }
+
+    // ---- macro (v26.9-Alpha.1) ----
+
+    /**
+     * Action sequence record/replay:
+     * {"type":"macro","op":"start-recording","name":"demo"}
+     * {"type":"macro","op":"record-step","command":{...}}
+     * {"type":"macro","op":"stop-recording"}
+     * {"type":"macro","op":"play","name":"demo"}
+     * {"type":"macro","op":"stop"}
+     * {"type":"macro","op":"delete","name":"demo"}
+     * {"type":"macro","op":"status"}
+     */
+    private static Result doMacro(ActionContext ctx, JsonObject cmd) {
+        var mgr = ctx.despotes().macroRecorder();
+        String op = Json.normalize(Json.getStr(cmd, "op", "status"));
+        switch (op) {
+            case "start-recording": {
+                String name = Json.getStr(cmd, "name", "");
+                if (name.isBlank()) throw ProtocolError.badRequest("'name' is required");
+                mgr.startRecording(name);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "macro");
+                res.addProperty("op", "start-recording");
+                res.addProperty("name", name);
+                return Result.ok(res);
+            }
+            case "record-step": {
+                JsonObject command = Json.getObj(cmd, "command");
+                if (command == null) throw ProtocolError.badRequest("'command' object is required");
+                mgr.recordStep(command);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "macro");
+                res.addProperty("op", "record-step");
+                return Result.ok(res);
+            }
+            case "stop-recording": {
+                JsonObject saved = mgr.stopRecording();
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "macro");
+                res.addProperty("op", "stop-recording");
+                if (saved != null) {
+                    res.add("saved", saved);
+                } else {
+                    res.addProperty("saved", false);
+                }
+                return Result.ok(res);
+            }
+            case "play": {
+                String name = Json.getStr(cmd, "name", "");
+                boolean ok = mgr.play(name);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "macro");
+                res.addProperty("op", "play");
+                res.addProperty("name", name);
+                res.addProperty("started", ok);
+                return Result.ok(res);
+            }
+            case "stop": {
+                mgr.stopPlayback();
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "macro");
+                res.addProperty("op", "stop");
+                return Result.ok(res);
+            }
+            case "delete": {
+                String name = Json.getStr(cmd, "name", "");
+                boolean ok = mgr.delete(name);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "macro");
+                res.addProperty("op", "delete");
+                res.addProperty("deleted", ok);
+                return Result.ok(res);
+            }
+            default: // status
+                return Result.ok(mgr.statusJson());
+        }
+    }
+
+    // ---- condition (v26.9-Alpha.1) ----
+
+    /**
+     * Conditional execution — evaluates a condition against current game state,
+     * then executes one of two command branches:
+     * {"type":"condition",
+     *  "if":{"type":"query-type","field":"path.to.field","op":"eq|ne|gt|lt|contains","value":...},
+     *  "then":[{...actions}],
+     *  "else":[{...actions}]}
+     *
+     * The 'if' clause runs a query (status/self/world/threats/etc), extracts a field via
+     * dot-path, compares against a value, and dispatches the matching branch.
+     */
+    private static Result doCondition(ActionContext ctx, JsonObject cmd) {
+        JsonObject cond = Json.getObj(cmd, "if");
+        if (cond == null) throw ProtocolError.badRequest("'if' object is required");
+
+        // Run the query to get state
+        String queryType = Json.normalize(Json.getStr(cond, "type", "status"));
+        JsonObject queryParams = new JsonObject();
+        queryParams.addProperty("type", queryType);
+        Result queryResult;
+        try {
+            queryResult = execute(ctx, queryParams);
+        } catch (Throwable t) {
+            throw ProtocolError.internal("condition query failed: " + t.getMessage());
+        }
+        JsonObject state = com.google.gson.JsonParser.parseString(
+                queryResult.toJsonString(ctx.requestId())).getAsJsonObject();
+
+        // Extract field by dot path
+        String fieldPath = Json.getStr(cond, "field", "");
+        com.google.gson.JsonElement fieldValue = null;
+        if (!fieldPath.isBlank()) {
+            String[] parts = fieldPath.split("\\.");
+            com.google.gson.JsonElement cur = state;
+            for (String part : parts) {
+                if (cur.isJsonObject() && cur.getAsJsonObject().has(part)) {
+                    cur = cur.getAsJsonObject().get(part);
+                } else {
+                    cur = null;
+                    break;
+                }
+            }
+            fieldValue = cur;
+        }
+
+        // Compare
+        String op = Json.normalize(Json.getStr(cond, "op", "exists"));
+        boolean matched;
+        switch (op) {
+            case "exists":
+                matched = fieldValue != null && !fieldValue.isJsonNull();
+                break;
+            case "eq": {
+                if (fieldValue == null) { matched = false; break; }
+                var valEl = cmd.get("value");
+                if (valEl == null) { matched = false; break; }
+                matched = fieldValue.equals(valEl);
+                break;
+            }
+            case "ne": {
+                if (fieldValue == null) { matched = true; break; }
+                var valEl = cmd.get("value");
+                matched = valEl != null && !fieldValue.equals(valEl);
+                break;
+            }
+            case "gt":
+            case "lt": {
+                if (fieldValue == null || !fieldValue.isJsonPrimitive()) { matched = false; break; }
+                double actual = fieldValue.getAsDouble();
+                double expected = Json.getDouble(cmd, "value", 0);
+                matched = op.equals("gt") ? actual > expected : actual < expected;
+                break;
+            }
+            case "contains": {
+                if (fieldValue == null || !fieldValue.isJsonPrimitive()) { matched = false; break; }
+                matched = fieldValue.getAsString().toLowerCase()
+                        .contains(Json.getStr(cmd, "value", "").toLowerCase());
+                break;
+            }
+            default:
+                throw ProtocolError.badRequest("unknown condition 'op': " + op);
+        }
+
+        // Execute the matching branch
+        JsonArray branch = matched
+                ? (cmd.has("then") ? cmd.getAsJsonArray("then") : null)
+                : (cmd.has("else") ? cmd.getAsJsonArray("else") : null);
+
+        JsonArray results = new JsonArray();
+        int executedCount = 0;
+        if (branch != null) {
+            for (var el : branch) {
+                if (!el.isJsonObject()) continue;
+                try {
+                    Result r = execute(ctx, el.getAsJsonObject());
+                    results.add(com.google.gson.JsonParser.parseString(
+                            r.toJsonString(ctx.requestId())));
+                    executedCount++;
+                } catch (Throwable t) {
+                    JsonObject err = new JsonObject();
+                    err.addProperty("error", t.getMessage());
+                    results.add(err);
+                }
+            }
+        }
+
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "condition");
+        res.addProperty("matched", matched);
+        res.addProperty("branchExecuted", branch != null ? (matched ? "then" : "else") : "none");
+        res.addProperty("actionsRun", executedCount);
+        res.add("results", results);
         return Result.ok(res);
     }
 }
