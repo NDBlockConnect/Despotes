@@ -1,0 +1,77 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.gradle.userdev' version '7.1.38'
+}
+
+// WAF note: some networks intermittently block the Java HTTP client against
+// maven.neoforged.net; mavenLocal is checked first so mirrored artifacts win.
+repositories {
+    mavenLocal()
+    maven { url = 'https://maven.neoforged.net/releases' }
+    mavenCentral()
+}
+
+version = mod_version + '-neoforge-1.21.10'
+group = mod_group_id
+
+base {
+    archivesName = 'Despotes'
+}
+
+dependencies {
+    implementation "net.neoforged:neoforge:${neo_version}"
+    compileOnly files("C:/Users/Sails/AppData/Local/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-client.jar")
+    compileOnly files("C:/Users/Sails/AppData/Local/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-universal.jar")
+    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
+    compileOnly "com.google.code.gson:gson:2.11.0"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir file('../common/src/main/java')
+            srcDir file('src/main/java')
+        }
+    }
+}
+
+runs {
+    configureEach {
+        systemProperty 'forge.logging.console.level', 'debug'
+        workingDirectory project.layout.projectDirectory.dir('run').dir(name)
+        modSource project.sourceSets.main
+    }
+    client
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+tasks.withType(ProcessResources).configureEach {
+    def replaceProperties = [
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : version,
+            mod_semver             : mod_semver
+    ]
+    inputs.properties replaceProperties
+    filesMatching('META-INF/mods.toml') {
+        expand replaceProperties
+    }
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand replaceProperties
+    }
+}
+
+jar {
+    archiveVersion = mod_version + '-neoforge-1.21.10'
+}
