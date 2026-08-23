@@ -56,18 +56,19 @@ public final class LegacyNeoForgePlayerHandle implements PlayerHandle {
 
     @Override
     public int selectedHotbarSlot() {
-        return player.getInventory().selected;
+        return player.getInventory().getSelectedSlot();
     }
 
     @Override
     public JsonObject inventoryJson() {
         JsonObject o = new JsonObject();
         var inv = player.getInventory();
-        o.addProperty("selectedSlot", inv.selected);
+        var items = inv.getNonEquipmentItems();
+        o.addProperty("selectedSlot", inv.getSelectedSlot());
         JsonArray hotbar = new JsonArray();
         JsonArray slots = new JsonArray();
-        for (int i = 0; i < inv.items.size(); i++) {
-            var stack = inv.items.get(i);
+        for (int i = 0; i < items.size(); i++) {
+            var stack = items.get(i);
             String id = (stack == null || stack.isEmpty())
                     ? "" : String.valueOf(
                     net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()));
