@@ -44,7 +44,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
 
     @Override
     public String mcVersion() {
-        return SharedConstants.getCurrentVersion().getId();
+        return SharedConstants.getCurrentVersion().id();
     }
 
     @Override
@@ -130,10 +130,12 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
         Screen screen = mc.screen;
         if (screen != null && key.getType() != InputConstants.Type.MOUSE) {
             // Route through the open screen so keys like ESC close menus.
+            net.minecraft.client.input.KeyEvent event =
+                    new net.minecraft.client.input.KeyEvent(key.getValue(), key.getValue(), 0);
             if (pressed) {
-                screen.keyPressed(key.getValue(), key.getValue(), 0);
+                screen.keyPressed(event);
             } else {
-                screen.keyReleased(key.getValue(), key.getValue(), 0);
+                screen.keyReleased(event);
             }
             return;
         }
@@ -178,7 +180,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
     public void openChat() {
         Minecraft mc = Minecraft.getInstance();
         if (!(mc.screen instanceof ChatScreen)) {
-            mc.setScreen(new ChatScreen(""));
+            mc.setScreen(new ChatScreen("", false));
         }
     }
 
@@ -228,9 +230,9 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
             target = s;
         }
         if (pressed) {
-            target.mouseClicked(x, y, button);
+            target.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(x, y, new net.minecraft.client.input.MouseButtonInfo(button, shift ? 1 : 0)), shift);
         } else {
-            target.mouseReleased(x, y, button);
+            target.mouseReleased(new net.minecraft.client.input.MouseButtonEvent(x, y, new net.minecraft.client.input.MouseButtonInfo(button, shift ? 1 : 0)));
         }
     }
 
@@ -293,13 +295,24 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
     public void beginCapture(ScreenshotOptions options, java.util.function.Consumer<ShotHandle> done) {
         Minecraft mc = Minecraft.getInstance();
         try {
-            NativeImage img = net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget());
-            Path tmp = Files.createTempFile("despotes-shot-", ".png");
-            img.writeToFile(tmp);
-            byte[] bytes = Files.readAllBytes(tmp);
-            Files.deleteIfExists(tmp);
-            done.accept(new LegacyNeoForgeShotHandle(img.getWidth(), img.getHeight(), "png", bytes));
-            img.close();
+            java.util.concurrent.atomic.AtomicBoolean settled =
+                    new java.util.concurrent.atomic.AtomicBoolean(false);
+            net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(), img -> {
+                if (!settled.compareAndSet(false, true)) {
+                    return;
+                }
+                try {
+                    Path tmp = Files.createTempFile("despotes-shot-", ".png");
+                    img.writeToFile(tmp);
+                    byte[] bytes = Files.readAllBytes(tmp);
+                    Files.deleteIfExists(tmp);
+                    done.accept(new LegacyNeoForgeShotHandle(img.getWidth(), img.getHeight(), "png", bytes));
+                    img.close();
+                } catch (Exception e) {
+                    log("[Despotes] capture encode failed: " + e.getMessage());
+                    done.accept(null);
+                }
+            });
         } catch (Exception e) {
             log("[Despotes] capture failed: " + e.getMessage());
             done.accept(null);

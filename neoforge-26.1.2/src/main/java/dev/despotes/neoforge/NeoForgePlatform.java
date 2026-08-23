@@ -91,7 +91,7 @@ public final class NeoForgePlatform implements IGamePlatform {
 
     @Override
     public ScreenHandle screen() {
-        Screen s = Minecraft.getInstance().gui.screen();
+        Screen s = Minecraft.getInstance().screen;
         return s == null ? null : new NeoForgeScreenHandle(s);
     }
 
@@ -126,7 +126,7 @@ public final class NeoForgePlatform implements IGamePlatform {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        Screen screen = mc.gui.screen();
+        Screen screen = mc.screen;
         if (screen != null && key.getType() != InputConstants.Type.MOUSE) {
             // Route through the open screen so keys like ESC close menus.
             net.minecraft.client.input.KeyEvent event =
@@ -178,8 +178,8 @@ public final class NeoForgePlatform implements IGamePlatform {
     @Override
     public void openChat() {
         Minecraft mc = Minecraft.getInstance();
-        if (!(mc.gui.screen() instanceof ChatScreen)) {
-            mc.setScreenAndShow(new ChatScreen("", false));
+        if (!(mc.screen instanceof ChatScreen)) {
+            mc.setScreen(new ChatScreen("", false));
         }
     }
 
@@ -194,7 +194,7 @@ public final class NeoForgePlatform implements IGamePlatform {
     @Override
     public void injectChars(String text) {
         Minecraft mc = Minecraft.getInstance();
-        Screen s = mc.gui.screen();
+        Screen s = mc.screen;
         if (s instanceof ChatScreen chat) {
             EditBox box = MinecraftKeyAccess.chatInput(chat);
             if (box != null) {
@@ -214,7 +214,7 @@ public final class NeoForgePlatform implements IGamePlatform {
 
     @Override
     public void injectMouseClick(double x, double y, int button, boolean pressed, boolean shift) {
-        Screen s = Minecraft.getInstance().gui.screen();
+        Screen s = Minecraft.getInstance().screen;
         if (s == null) {
             return;
         }
@@ -301,53 +301,27 @@ public final class NeoForgePlatform implements IGamePlatform {
     @Override
     public void beginCapture(ScreenshotOptions options, java.util.function.Consumer<ShotHandle> done) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.gameRenderer == null) {
-            done.accept(null);
-            return;
-        }
         try {
-            var target = mc.gameRenderer.mainRenderTarget();
-            int width = target.width;
-            int height = target.height;
-            var texture = target.getColorTexture();
-            if (texture == null) {
-                done.accept(null);
-                return;
-            }
-            var device = com.mojang.blaze3d.systems.RenderSystem.getDevice();
-            int blockSize = texture.getFormat().blockSize();
-            var buffer = device.createBuffer(() -> "despotes-screenshot",
-                    com.mojang.blaze3d.buffers.GpuBuffer.USAGE_MAP_READ,
-                    (long) width * height * blockSize);
-            var encoder = device.createCommandEncoder();
-            encoder.copyTextureToBuffer(texture, buffer, 0L, () -> {
-                // GPU copy completed — read back and encode.
-                try (var view = buffer.map(true, false)) {
-                    var image = new NativeImage(width, height, false);
-                    var data = view.data();
-                    for (int row = 0; row < height; row++) {
-                        int base = row * width * blockSize;
-                        for (int col = 0; col < width; col++) {
-                            int pixel = data.getInt(base + col * blockSize);
-                            image.setPixelABGR(col, height - 1 - row, pixel | 0xFF000000);
-                        }
-                    }
+            java.util.concurrent.atomic.AtomicBoolean settled =
+                    new java.util.concurrent.atomic.AtomicBoolean(false);
+            net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(), img -> {
+                if (!settled.compareAndSet(false, true)) {
+                    return;
+                }
+                try {
                     Path tmp = Files.createTempFile("despotes-shot-", ".png");
-                    image.writeToFile(tmp);
+                    img.writeToFile(tmp);
                     byte[] bytes = Files.readAllBytes(tmp);
                     Files.deleteIfExists(tmp);
-                    image.close();
-                    done.accept(new NeoForgeShotHandle(width, height, "png", bytes));
+                    done.accept(new NeoForgeShotHandle(img.getWidth(), img.getHeight(), "png", bytes));
+                    img.close();
                 } catch (Exception e) {
                     log("[Despotes] capture encode failed: " + e.getMessage());
                     done.accept(null);
-                } finally {
-                    buffer.close();
                 }
-            }, 0);
-            encoder.submit();
+            });
         } catch (Exception e) {
-            log("[Despotes] capture submit failed: " + e.getMessage());
+            log("[Despotes] capture failed: " + e.getMessage());
             done.accept(null);
         }
     }
@@ -370,7 +344,7 @@ public final class NeoForgePlatform implements IGamePlatform {
     @Override
     public void grabMouseCapture() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.gui.screen() != null || mc.level == null) {
+        if (mc.screen != null || mc.level == null) {
             return;
         }
         mc.mouseHandler.grabMouse();
