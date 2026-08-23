@@ -8,21 +8,29 @@
 - **v26.0** — five loader lines, input injection, screenshot, overlay, oplog, HTTP/CLI/FileDrop
 - **v26.1** — API Key auth, AI intent translation, AI assistant, world event stream, chat action, container/hotbar
 - **v26.2** — death awareness, perception (self/threats/damage), ASM instrumentation, JavaAgent-for-all (loader mixing), Aprism adaptation, latency telemetry, UX (ping/lookat/long-poll), loader parity
+- **v26.3** — inventory action, recipe query, craft, interact, trade, sort
+- **v26.4** — multiplayer perception (players/server/tablist/scoreboard/coords/whisper)
+- **v26.5** — pathfinding & navigation (goto/follow/stop-nav)
+- **v26.6** — combat system (attack-entity/combat/retreat/shield)
+- **v26.7** — building ops (place-block/dig/fill)
+- **v26.8** — WebSocket transport (RFC 6455, port 25586)
+- **v26.9** — redstone query + schedule/macro/condition automation primitives
+- **v26.10-Alpha.1** — version support expansion: +26.1.2 and +1.21.10 lines (18/20 artifacts; neoforge new lines pending NeoForm build)
 
 ### Version scheme
-`v<Year>.<minor>[-Alpha.N]` — Year maps to calendar year (v26 = 2026). Each minor: Alpha.1-9 (Pre-Release, .9 = RC), then bare version (Release).
+Per BC skill spec: `v{Year}.{Major}-Alpha{N}` — Major range 0-∞, valid through 2026-12-31 for v26. Each major: Alpha.1-9 (Pre-Release), then bare version (Release).
 
 ### Branch model
 - `main` — docs/spec only
 - `native` — primary dev line (premain javaagent + Mixin + ASM)
 - `fabric` / `neoforge` / `forge` / `aprism` — loader branches, ff-merged from native
 
-### Build matrix (14 artifacts)
+### Build matrix (20 artifacts planned; 18 in v26.10-Alpha.1)
 | Loader | MC versions | JDK |
 |---|---|---|
-| native | 1.20.1, 1.21.1, 1.21.4, 26.2 | 25 (26.x), 21 (1.21.x), 17 (1.20.x) |
-| fabric | 1.20.1, 1.21.1, 1.21.4, 26.2 | same |
-| neoforge | 1.21.1, 1.21.4, 26.2 | same |
+| native | 1.20.1, 1.21.1, 1.21.4, **1.21.10**, **26.1.2**, 26.2 | 25 (26.x), 21 (1.21.x), 17 (1.20.x) |
+| fabric | 1.20.1, 1.21.1, 1.21.4, **1.21.10**, **26.1.2**, 26.2 | same |
+| neoforge | 1.21.1, 1.21.4, 26.2 (+ 1.21.10 / 26.1.2 pending NeoForm) | same |
 | forge | 1.20.1, 1.21.1 | same |
 | aprism | 26.2 | 25 |
 
@@ -58,9 +66,11 @@ mdl game status <instance>
 
 ### Known issues
 - Root gradle.properties still at v26.0-Alpha.2 (cosmetic; subprojects override)
-- JDK path in root gradle.properties points to old workspace dir
+- JDK path in root gradle.properties points to old workspace dir (subprojects carry their own)
 - v26.2 14-artifact full runtime verification never completed
 - MDL instances have older mod versions installed
+- neoforge-26.1.2 / neoforge-1.21.10: NeoForm first-pass decompile+recompile repeatedly killed by memory pressure on 15.7GB host; source identical to verified neoforge-26.2/1.21.4 — retry on a less loaded machine, then attach artifacts and cut stable v26.10
+- fabric-26.1.2 line: event-stream capture and /give feedback silent (fabric-api 0.155.2 behavior); chat action itself submits fine
 
 ---
 
