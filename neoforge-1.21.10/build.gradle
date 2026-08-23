@@ -20,9 +20,6 @@ base {
 
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
-    compileOnly files("C:/Users/Sails/AppData/Local/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-client.jar")
-    compileOnly files("C:/Users/Sails/AppData/Local/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-universal.jar")
-    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
     compileOnly "com.google.code.gson:gson:2.11.0"
 }
 
@@ -47,6 +44,24 @@ runs {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21
+}
+
+// NeoForm's Vineflower decompiler fails on EntitySectionStorage.getEntities in 1.21.10,
+// emitting an illegal "// $VF: Couldn't be decompiled" lambda placeholder. Patch the
+// transformed source after every transformSource run (idempotent).
+tasks.matching { it.name == 'neoFormTransformSource' }.configureEach {
+    doLast {
+        def targets = fileTree(dir: layout.buildDirectory.dir('neoForm'), include: '**/steps/transformSource/transformed/net/minecraft/world/level/entity/EntitySectionStorage.java')
+        def broken = 'this.forEachAccessibleNonEmptySection(p_261843_, p_261463_ -> // $VF: Couldn\'t be decompiled);'
+        def fixed = 'this.forEachAccessibleNonEmptySection(p_261843_, p_261463_ -> p_261463_.getEntities(p_261630_, p_261843_, p_261742_));'
+        targets.each { f ->
+            def text = f.getText('UTF-8')
+            if (text.contains(broken)) {
+                f.setText(text.replace(broken, fixed), 'UTF-8')
+                logger.lifecycle('[Despotes] patched Vineflower decompile failure in ' + f.name)
+            }
+        }
+    }
 }
 
 java {

@@ -70,7 +70,15 @@ mdl game status <instance>
 - v26.2 14-artifact full runtime verification never completed
 - MDL instances have older mod versions installed
 - neoforge-26.1.2 / neoforge-1.21.10: NeoForm first-pass decompile+recompile repeatedly killed by memory pressure on 15.7GB host; source identical to verified neoforge-26.2/1.21.4 — retry on a less loaded machine, then attach artifacts and cut stable v26.10
+  - neoforge-1.21.10 additionally needs the Vineflower decompile-failure patch hook (added in its build.gradle: neoFormTransformSource doLast rewrites the illegal `$VF: Couldn't be decompiled` lambda in EntitySectionStorage.java:120); recompile passes after patch. Legacy NeoForge 21.1.248 jars must NOT be on its compile classpath (they shadow 21.10 classes).
+  - neoforge-26.1.2 BUILD SUCCESSFUL (artifact in releases/v26.10-Alpha.1/, 161KB)
 - fabric-26.1.2 line: event-stream capture and /give feedback silent (fabric-api 0.155.2 behavior); chat action itself submits fine
+
+### RESOLVED — v26.1-native + Aprism dual-agent crash (reported 2026-08-23)
+- Symptom: Despotes-v26.1-native-26.2.jar attached alongside Aprism agent on MC 26.2 → game silently dies ~2 s after title screen (no crash report, no hs_err, log truncates after texture-atlas creation). Reproduced 3x by reporting agent; isolation confirmed Despotes as the killer (Aprism-only run survives).
+- Root cause: v26.1 native predates the v26.2-Alpha.4 loader-mixing guard. Its transformer weaves hooks into game classes defined by Aprism's classloader; woven callbacks then reference agent classes invisible from that loader → hard crash inside the game loop. (v26.2-Alpha.4 release notes documented this exact historical failure mode.)
+- Fix verification (2026-08-23): Vanilla 26.2 instance, Aprism v26.6 agent + Despotes v26.10-Alpha.1 native co-attached → process alive 4+ min past title screen, boot OK, HTTP 25585 responds `v26.10-Alpha.1 loader=native` (companion/pump mode). v26.10 clean.
+- Disposition: v26.1-native-26.2.jar must NOT be used with Aprism (or any loader) co-attached — superseded by v26.2+ native artifacts which carry the guard. Reporting agent should register Despotes-v26.10-Alpha.1-native-26.2.jar (or later) for the JEI in-world activation verification.
 
 ---
 
