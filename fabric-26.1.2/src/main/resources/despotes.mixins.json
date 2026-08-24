@@ -3,7 +3,8 @@
   "package": "dev.despotes.fabric.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "MouseGrabMixin"
+    "MouseGrabMixin",
+    "MessageCaptureMixin"
   ],
   "injectors": {
     "defaultRequire": 1

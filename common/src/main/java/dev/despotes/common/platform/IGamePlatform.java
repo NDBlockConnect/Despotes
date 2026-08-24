@@ -523,6 +523,18 @@ public interface IGamePlatform {
         }
     }
 
+    /** v26.11-Alpha.1: redstone circuit component scan around a centre block. */
+    default com.google.gson.JsonObject probeCircuit(int x, int y, int z, int radius) {
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            return dev.despotes.common.probe.WorldProbes.circuit(
+                    (net.minecraft.client.Minecraft) mc, x, y, z, radius);
+        } catch (Throwable t) {
+            return new com.google.gson.JsonObject();
+        }
+    }
+
     /** Current open screen object via the gui helper, or null. Reflective across versions. */
     private static Object currentScreen(Object mc) {
         try {

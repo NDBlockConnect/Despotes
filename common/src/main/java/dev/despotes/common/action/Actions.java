@@ -140,6 +140,10 @@ public final class Actions {
                 return Result.ok("config-reload");
             case "redstone":
                 return doRedstone(ctx, cmd);
+            case "circuit":
+                return doCircuit(ctx, cmd);
+            case "redstone-action":
+                return doRedstoneAction(ctx, cmd);
             case "schedule":
                 return doSchedule(ctx, cmd);
             case "macro":
@@ -1578,6 +1582,80 @@ public final class Actions {
             z = (int) Json.getDouble(target, "z", 0);
         }
         return Result.ok(p.probeRedstone(x, y, z));
+    }
+
+    // ---- circuit query (v26.11-Alpha.1) ----
+
+    /**
+     * Redstone circuit scan: {"type":"circuit","x":..,"y":..,"z":..,"radius":4}
+     * Lists every circuit component in the cube (wire/torch/repeater/comparator/lever/
+     * button/plate/observer/piston/note_block/...) with powered state and interesting
+     * properties (delay, note, facing). Radius clamped 1-8; defaults to crosshair target
+     * when no coordinates given.
+     */
+    private static Result doCircuit(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        int x;
+        int y;
+        int z;
+        if (cmd.has("x") && cmd.has("y") && cmd.has("z")) {
+            x = Json.getInt(cmd, "x", 0);
+            y = Json.getInt(cmd, "y", 0);
+            z = Json.getInt(cmd, "z", 0);
+        } else {
+            JsonObject target = p.probeTarget();
+            if (!target.has("x")) {
+                throw ProtocolError.badRequest("circuit requires 'x'/'y'/'z' or a crosshair block target");
+            }
+            x = (int) Json.getDouble(target, "x", 0);
+            y = (int) Json.getDouble(target, "y", 0);
+            z = (int) Json.getDouble(target, "z", 0);
+        }
+        int r = Math.min(8, Math.max(1, Json.getInt(cmd, "radius", 4)));
+        return Result.ok(p.probeCircuit(x, y, z, r));
+    }
+
+    // ---- redstone-action (v26.11-Alpha.1) ----
+
+    /**
+     * Right-click interaction with a circuit component:
+     * {"type":"redstone-action","op":"toggle"|"cycle","x":..,"y":..,"z":..,"face":"up","count":N}
+     *
+     * toggle = one right-click (lever/button/door). cycle = N right-clicks with 2-tick
+     * spacing (repeater delay 1-4, note-block pitch 0-24, comparator mode). Uses the
+     * standard useItemOn pipeline, so it works across all loader lines.
+     */
+    private static Result doRedstoneAction(ActionContext ctx, JsonObject cmd) {
+        IGamePlatform p = ctx.despotes().platform();
+        ctx.requireInGame();
+        String op = Json.normalize(Json.getStr(cmd, "op", "toggle"));
+        int x = Json.getInt(cmd, "x", Integer.MIN_VALUE);
+        int y = Json.getInt(cmd, "y", Integer.MIN_VALUE);
+        int z = Json.getInt(cmd, "z", Integer.MIN_VALUE);
+        if (x == Integer.MIN_VALUE || y == Integer.MIN_VALUE || z == Integer.MIN_VALUE) {
+            throw ProtocolError.badRequest("redstone-action requires 'x'/'y'/'z'");
+        }
+        String face = Json.normalize(Json.getStr(cmd, "face", "up"));
+        int count = Math.min(24, Math.max(1, Json.getInt(cmd, "count", 1)));
+
+        p.worldPlaceBlock(x, y, z, face, "main");
+        int dispatched = 1;
+        for (int i = 1; i < count; i++) {
+            final int ignore = i;
+            ctx.despotes().dispatcher().scheduleInTicks(2 * i, () -> p.worldPlaceBlock(x, y, z, face, "main"));
+            dispatched++;
+        }
+
+        JsonObject res = new JsonObject();
+        res.addProperty("executed", "redstone-action");
+        res.addProperty("op", op);
+        res.addProperty("x", x);
+        res.addProperty("y", y);
+        res.addProperty("z", z);
+        res.addProperty("face", face);
+        res.addProperty("clicks", op.equals("cycle") ? dispatched : 1);
+        return Result.ok(res);
     }
 
     // ---- schedule (v26.9-Alpha.1) ----
