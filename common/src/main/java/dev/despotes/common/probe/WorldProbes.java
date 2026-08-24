@@ -1026,4 +1026,141 @@ public final class WorldProbes {
         o.add("adjacent", adjacent);
         return o;
     }
+
+    /** Block-id fragments that count as redstone-circuit components for the circuit query. */
+    private static final Set<String> CIRCUIT_FRAGMENTS = Set.of(
+            "redstone_wire", "redstone_torch", "redstone_block", "redstone_lamp",
+            "repeater", "comparator", "lever", "button", "pressure_plate",
+            "observer", "piston", "dispenser", "dropper", "hopper",
+            "note_block", "daylight_detector", "target", "sculk_sensor", "calibrated_sculk_sensor");
+
+    /** True when the block id looks like a circuit component. */
+    private static boolean isCircuitComponent(String blockId) {
+        for (String frag : CIRCUIT_FRAGMENTS) {
+            if (blockId.contains(frag)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * v26.11-Alpha.1: redstone circuit scan. Walks a cube around the centre and returns
+     * every circuit component with position, powered state and interesting state
+     * properties (repeater delay, note-block pitch, comparator mode, lever/button facing).
+     * Reflective state-property reads degrade gracefully across versions.
+     */
+    public static JsonObject circuit(Minecraft mc, int cx, int cy, int cz, int radius) {
+        JsonObject o = new JsonObject();
+        var level = mc.level;
+        if (level == null) {
+            o.addProperty("inWorld", false);
+            return o;
+        }
+        o.addProperty("inWorld", true);
+        o.addProperty("cx", cx);
+        o.addProperty("cy", cy);
+        o.addProperty("cz", cz);
+        o.addProperty("radius", radius);
+        JsonArray components = new JsonArray();
+        int scanned = 0;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    BlockPos p = new BlockPos(cx + dx, cy + dy, cz + dz);
+                    scanned++;
+                    BlockState st = level.getBlockState(p);
+                    String id = String.valueOf(BuiltInRegistries.BLOCK.getKey(st.getBlock()));
+                    if (!isCircuitComponent(id)) {
+                        continue;
+                    }
+                    JsonObject j = new JsonObject();
+                    j.addProperty("block", id);
+                    j.addProperty("x", p.getX());
+                    j.addProperty("y", p.getY());
+                    j.addProperty("z", p.getZ());
+                    // powered flag (present on most interactive components)
+                    Boolean powered = stateBool(st, "powered");
+                    if (powered != null) {
+                        j.addProperty("powered", powered);
+                    }
+                    // repeater/comparator delay
+                    Integer delay = stateInt(st, "delay");
+                    if (delay != null) {
+                        j.addProperty("delay", delay);
+                    }
+                    // note block pitch
+                    Integer note = stateInt(st, "note");
+                    if (note != null) {
+                        j.addProperty("note", note);
+                    }
+                    // facing-ish properties useful for wiring
+                    String facing = stateString(st, "facing");
+                    if (facing != null) {
+                        j.addProperty("facing", facing);
+                    }
+                    Boolean locked = stateBool(st, "locked");
+                    if (locked != null) {
+                        j.addProperty("locked", locked);
+                    }
+                    components.add(j);
+                }
+            }
+        }
+        o.addProperty("scanned", scanned);
+        o.addProperty("count", components.size());
+        o.add("components", components);
+        return o;
+    }
+
+    /** Read a boolean blockstate property reflectively ("powered"/"locked"/...). */
+    private static Boolean stateBool(BlockState st, String name) {
+        try {
+            Object prop = findStateProperty(st, name);
+            if (prop == null) return null;
+            Object val = st.getClass().getMethod("getValue", net.minecraft.world.level.block.state.properties.Property.class)
+                    .invoke(st, prop);
+            return (Boolean) val;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Read an integer blockstate property reflectively ("delay"/"note"/...). */
+    private static Integer stateInt(BlockState st, String name) {
+        try {
+            Object prop = findStateProperty(st, name);
+            if (prop == null) return null;
+            Object val = st.getClass().getMethod("getValue", net.minecraft.world.level.block.state.properties.Property.class)
+                    .invoke(st, prop);
+            return ((Number) val).intValue();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Read a string blockstate property reflectively ("facing"/...). */
+    private static String stateString(BlockState st, String name) {
+        try {
+            Object prop = findStateProperty(st, name);
+            if (prop == null) return null;
+            Object val = st.getClass().getMethod("getValue", net.minecraft.world.level.block.state.properties.Property.class)
+                    .invoke(st, prop);
+            return String.valueOf(val);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Find a property instance on the blockstate's owner by name. */
+    private static Object findStateProperty(BlockState st, String name) {
+        try {
+            Object owner = st.getClass().getMethod("getBlock").invoke(st);
+            Object props = owner.getClass().getMethod("getStateDefinition").invoke(owner);
+            Object prop = props.getClass().getMethod("getProperty", String.class).invoke(props, name);
+            return prop;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
 }

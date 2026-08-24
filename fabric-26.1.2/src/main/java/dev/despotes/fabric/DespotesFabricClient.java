@@ -14,16 +14,9 @@ public final class DespotesFabricClient implements ClientModInitializer {
         Despotes despotes = Despotes.boot(new FabricPlatform());
         ClientTickEvents.END_CLIENT_TICK.register(client -> despotes.clientTick());
 
-        // Overlay rendering via the fabric-api HudElementRegistry (no Hud mixin on 26.1).
-        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
-                net.minecraft.resources.Identifier.parse("despotes:overlay"),
-                (graphics, deltaTracker) -> {
-                    despotes.frameEnd();
-                    HudOverlay.draw(graphics, net.minecraft.client.Minecraft.getInstance().font);
-                });
-
-        // Alpha.9: capture inbound chat / system messages into the event bus so
-        // callers can poll GET /despotes/v1/events for what the game said.
+        // v26.11 fix: message events MUST be registered before any registration that
+        // could throw — a throw here previously left the event bus silent for the whole
+        // session (tick events kept working, which masked the failure).
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, instant) -> {
             JsonObject payload = new JsonObject();
             payload.addProperty("message", message.getString());
@@ -38,5 +31,18 @@ public final class DespotesFabricClient implements ClientModInitializer {
             payload.addProperty("overlay", overlay);
             despotes.eventBus().publish(overlay ? "overlay" : "system", payload);
         });
+
+        // Overlay rendering via the fabric-api HudElementRegistry (no Hud mixin on 26.1).
+        // Defensive: an HUD-hook failure must never take down the control channel.
+        try {
+            net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
+                    net.minecraft.resources.Identifier.parse("despotes:overlay"),
+                    (graphics, deltaTracker) -> {
+                        despotes.frameEnd();
+                        HudOverlay.draw(graphics, net.minecraft.client.Minecraft.getInstance().font);
+                    });
+        } catch (Throwable t) {
+            despotes.platform().log("[Despotes] HUD overlay registration failed (overlay disabled): " + t);
+        }
     }
 }
