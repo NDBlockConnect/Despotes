@@ -39,8 +39,28 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 // Pack the .aje: manifest at the zip root plus the compiled mod jar (Aprism doc 7 layout).
+// v26.11: the embedded jar carries a populated MANIFEST.MF (Implementation-*) so tooling
+// that reads jar metadata (or tries -javaagent) sees real coordinates, not an empty file.
+// Gradle 9 removed project.manifest(Closure), so the manifest is generated as a file.
+def ajeManifestFile = layout.buildDirectory.file('aje-manifest/MANIFEST.MF')
+def generateAjeManifest = tasks.register('generateAjeManifest') {
+    outputs.file(ajeManifestFile)
+    doLast {
+        def f = ajeManifestFile.get().asFile
+        f.parentFile.mkdirs()
+        f.text = ("Manifest-Version: 1.0\r\n" +
+                "Implementation-Title: Despotes\r\n" +
+                "Implementation-Version: ${mod_semver}\r\n" +
+                "Implementation-Vendor: NDBlockConnect\r\n" +
+                "Specification-Title: Despotes Aprism Native Mod\r\n" +
+                "Specification-Version: ${mod_semver}\r\n" +
+                "Build-Jdk-Spec: 25\r\n")
+    }
+}
+
 tasks.register('packageAje', Zip) {
     dependsOn jar
+    dependsOn generateAjeManifest
     archiveExtension = 'aje'
     archiveVersion = mod_version + '-aprism-26.2'
     from("src/main/resources") {
@@ -51,6 +71,23 @@ tasks.register('packageAje', Zip) {
     from(jar.archiveFile) {
         rename { "despotes.jar" }
     }
+    from(ajeManifestFile) {
+        into 'META-INF'
+    }
 }
 
 build.dependsOn packageAje
+
+// v26.11 fix: also stamp the standalone jar's manifest (the artifact historically
+// shipped as .jar; an empty MANIFEST.MF confused Aprism tooling that reads it).
+jar {
+    manifest {
+        attributes(
+                'Implementation-Title': 'Despotes',
+                'Implementation-Version': mod_semver,
+                'Implementation-Vendor': 'NDBlockConnect',
+                'Specification-Title': 'Despotes Aprism Native Mod',
+                'Specification-Version': mod_semver,
+                'Build-Jdk-Spec': '25')
+    }
+}

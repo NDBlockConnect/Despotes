@@ -1542,6 +1542,9 @@ public final class Actions {
         }
         res.addProperty("width", screen.width());
         res.addProperty("height", screen.height());
+        // v26.11: window physical size + GUI scale so external agents can convert
+        // window-physical pixel measurements into the GUI-scaled click space.
+        res.add("window", ctx.despotes().platform().windowGeometry());
         res.add("widgets", screen.widgetTree(4));
         return Result.ok(res);
     }

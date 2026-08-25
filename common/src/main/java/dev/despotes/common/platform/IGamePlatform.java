@@ -535,6 +535,58 @@ public interface IGamePlatform {
         }
     }
 
+    /**
+     * v26.11-Alpha.1: window geometry + GUI scale for coordinate-space conversion.
+     * Despotes click coordinates are GUI-SCALED (logical MC pixels, same space as
+     * vanilla screens). External agents measuring the OS window get PHYSICAL pixels;
+     * {@code physicalX / guiScale = logicalX}. Returns {@code {width,height,guiScale,
+     * physicalWidth,physicalHeight}}; reflective across versions, empty on failure.
+     */
+    default com.google.gson.JsonObject windowGeometry() {
+        com.google.gson.JsonObject o = new com.google.gson.JsonObject();
+        try {
+            Object mc = Class.forName("net.minecraft.client.Minecraft")
+                    .getMethod("getInstance").invoke(null);
+            Object win = mc.getClass().getMethod("getWindow").invoke(mc);
+            int physW = ((Number) win.getClass().getMethod("getWidth").invoke(win)).intValue();
+            int physH = ((Number) win.getClass().getMethod("getHeight").invoke(win)).intValue();
+            int guiW = ((Number) win.getClass().getMethod("getGuiScaledWidth").invoke(win)).intValue();
+            int guiH = ((Number) win.getClass().getMethod("GuiScaledHeight").invoke(win)).intValue();
+            int scale = ((Number) win.getClass().getMethod("getGuiScale").invoke(win)).intValue();
+            o.addProperty("physicalWidth", physW);
+            o.addProperty("physicalHeight", physH);
+            o.addProperty("width", guiW);
+            o.addProperty("height", guiH);
+            o.addProperty("guiScale", scale);
+        } catch (Throwable t) {
+            try {
+                // 26.x renamed some Window accessors; fall back to field-style reads.
+                Object mc = Class.forName("net.minecraft.client.Minecraft")
+                        .getMethod("getInstance").invoke(null);
+                Object win = mc.getClass().getMethod("getWindow").invoke(mc);
+                int physW = 0;
+                int physH = 0;
+                java.lang.reflect.Field fw = win.getClass().getDeclaredField("width");
+                fw.setAccessible(true);
+                physW = fw.getInt(win);
+                java.lang.reflect.Field fh = win.getClass().getDeclaredField("height");
+                fh.setAccessible(true);
+                physH = fh.getInt(win);
+                java.lang.reflect.Field fs = win.getClass().getDeclaredField("guiScale");
+                fs.setAccessible(true);
+                int scale = fs.getInt(win);
+                o.addProperty("physicalWidth", physW);
+                o.addProperty("physicalHeight", physH);
+                o.addProperty("width", physW / scale);
+                o.addProperty("height", physH / scale);
+                o.addProperty("guiScale", scale);
+            } catch (Throwable t2) {
+                // leave empty — callers degrade gracefully
+            }
+        }
+        return o;
+    }
+
     /** Current open screen object via the gui helper, or null. Reflective across versions. */
     private static Object currentScreen(Object mc) {
         try {
