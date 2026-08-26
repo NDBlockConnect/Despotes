@@ -71,6 +71,10 @@ public final class Json {
         JsonObject e = new JsonObject();
         e.addProperty("code", err.code().name());
         e.addProperty("message", err.getMessage());
+        // v26.12-Alpha.1: structured details when provided (field names, offending values).
+        if (err.details() != null) {
+            e.add("details", err.details());
+        }
         o.add("error", e);
         return stringify(o);
     }
