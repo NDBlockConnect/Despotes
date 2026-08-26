@@ -70,7 +70,16 @@ mdl launch <instance> --agent --agent-port 25585 --detach
 mdl game status <instance>
 ```
 
+### BC skill compliance audit (2026-08-26)
+- SSH signing: ACTIVE (commit.gpgsign=true + ssh signing key registered on GitHub; local allowedSignersFile configured, git log %G?=G). Historical commits verified Good.
+- RELEASE_NOTES.md: untracked from repo per Git Control rule 2 (notes live on GitHub Releases); future files gitignored.
+- Release criteria gap: v26.11 stable had 1 formal regression round + Alpha.1 full-chain tests; spec requires 3+ rounds for a Release. Future stables must accumulate 3 rounds (log each in FACT.md).
+- Robustness assessment: REQUIRED before planning each new Major Version — 30-min simulated usage + malicious-attack test against the previous Major. Not yet performed for v26.11; must precede v26.12 planning.
+- Annual Edition: v26.2026 planning starts early December 2026, committed no later than 2026-12-31.
+- Branch model: loader-branch model (Aprism docs §12) intentionally supersedes the skill's per-Major-branch rule for this repo.
+
 ### Known issues
+
 - Root gradle.properties still at v26.0-Alpha.2 (cosmetic; subprojects override)
 - JDK path in root gradle.properties points to old workspace dir (subprojects carry their own)
 - v26.2 14-artifact full runtime verification never completed
