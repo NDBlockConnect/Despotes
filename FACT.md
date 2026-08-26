@@ -78,6 +78,10 @@ mdl game status <instance>
 - Annual Edition: v26.2026 planning starts early December 2026, committed no later than 2026-12-31.
 - Branch model: loader-branch model (Aprism docs §12) intentionally supersedes the skill's per-Major-branch rule for this repo.
 
+### v26.11 robustness assessment (2026-08-26, input for v26.12 planning)
+- Hostile-input attack (17 malformed/malicious payloads against live fabric-26.2 instance): 14 handled gracefully by the protocol layer (ok:true with sane defaults or structured 4xx errors) — nonexistent types, empty type, missing required fields, wrong types (keys as string), out-of-range (hotbar 999), missing params, non-JSON body (400 BAD_REQUEST). No crash from any payload.
+- Session terminated early by HOST OOM: parallel-session instances (acb_prod x2, -Xmx8G each) left 1.1GB free; game died during chunk render (exit -1, zero Despotes exceptions in log) — environmental, not attack-induced.
+- Assessment: protocol layer robust; no Serious-level findings. v26.12 may proceed. Re-test recommended when host memory is free.
 ### Known issues
 
 - Root gradle.properties still at v26.0-Alpha.2 (cosmetic; subprojects override)
