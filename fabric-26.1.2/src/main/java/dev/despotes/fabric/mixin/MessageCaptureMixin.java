@@ -27,6 +27,11 @@ public abstract class MessageCaptureMixin {
         org.slf4j.LoggerFactory.getLogger("Despotes").info("[Despotes] MessageCaptureMixin class loaded");
     }
 
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void despotes$onInit(CallbackInfo ci) {
+        org.slf4j.LoggerFactory.getLogger("Despotes").info("[Despotes] MessageCaptureMixin: ClientPacketListener instantiated");
+    }
+
     private static void despotes$publish(String type, Component message, boolean overlay) {
         Despotes d = Despotes.get();
         if (d == null) {

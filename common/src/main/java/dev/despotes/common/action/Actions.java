@@ -263,6 +263,21 @@ public final class Actions {
         if (text.isEmpty()) {
             throw ProtocolError.badRequest("'text' is required");
         }
+        // v26.11 fix: chat on the title screen NPE'd (minecraft.player null) — commands
+        // still work through the command channel, plain text requires a loaded world.
+        if (!p.inGame()) {
+            if (text.startsWith("/")) {
+                p.sendCommand(text);
+                JsonObject res = new JsonObject();
+                res.addProperty("executed", "chat");
+                res.addProperty("via", "command");
+                res.addProperty("chars", text.length());
+                res.addProperty("submitted", true);
+                res.addProperty("note", "not in game; sent via command channel only");
+                return Result.ok(res);
+            }
+            throw ProtocolError.notInGame();
+        }
         boolean submit = Json.getBool(cmd, "submit", true);
         String via;
         if (text.startsWith("/")) {
@@ -1542,6 +1557,9 @@ public final class Actions {
         }
         res.addProperty("width", screen.width());
         res.addProperty("height", screen.height());
+        // v26.11: window physical size + GUI scale so external agents can convert
+        // window-physical pixel measurements into the GUI-scaled click space.
+        res.add("window", ctx.despotes().platform().windowGeometry());
         res.add("widgets", screen.widgetTree(4));
         return Result.ok(res);
     }

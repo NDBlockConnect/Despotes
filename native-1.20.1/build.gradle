@@ -14,7 +14,7 @@ java {
 }
 
 // Official-named 1.20.1 client jar produced by the Fabric Loom cache.
-def mcClient = file("C:/Users/Sails/Documents/Workspace/NormalWorkspace/Coding/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-b7a764897f/1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2/minecraft-merged-b7a764897f-1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2.jar")
+def mcClient = file("C:/Users/Sails/Documents/Workspace/01-Active/Domain-Projects/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-b7a764897f/1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2/minecraft-merged-b7a764897f-1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2.jar")
 def asmDir = file("C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm")
 
 dependencies {
@@ -23,7 +23,7 @@ dependencies {
     compileOnly "com.google.code.gson:gson:2.11.0"
     compileOnly "org.jetbrains:annotations:24.0.1"
     compileOnly "org.lwjgl:lwjgl-glfw:3.3.3"
-    compileOnly fileTree(dir: "C:/Users/Sails/Documents/Workspace/NormalWorkspace/Coding/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/remapped_mods/loom_mappings_1_20_1_layered_hash_2198_v2", include: "**/*.jar")
+    compileOnly fileTree(dir: "C:/Users/Sails/Documents/Workspace/01-Active/Domain-Projects/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/remapped_mods/loom_mappings_1_20_1_layered_hash_2198_v2", include: "**/*.jar")
     // v26.2-Alpha.3: ASM for dynamic instrumentation, embedded into the agent jar.
     implementation files(
             file("$asmDir/asm/9.10.1/asm-9.10.1.jar"),
