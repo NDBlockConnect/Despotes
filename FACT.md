@@ -82,6 +82,12 @@ mdl game status <instance>
 - Hostile-input attack (17 malformed/malicious payloads against live fabric-26.2 instance): 14 handled gracefully by the protocol layer (ok:true with sane defaults or structured 4xx errors) — nonexistent types, empty type, missing required fields, wrong types (keys as string), out-of-range (hotbar 999), missing params, non-JSON body (400 BAD_REQUEST). No crash from any payload.
 - Session terminated early by HOST OOM: parallel-session instances (acb_prod x2, -Xmx8G each) left 1.1GB free; game died during chunk render (exit -1, zero Despotes exceptions in log) — environmental, not attack-induced.
 - Assessment: protocol layer robust; no Serious-level findings. v26.12 may proceed. Re-test recommended when host memory is free.
+### v26.12-A2 Minecraft 1.20.1 support audit (2026-08-27)
+- Fabric 1.20.1: clean Java 17 build + MDL world test passed (self, world, inventory, circuit, screenshot).
+- Forge 1.20.1: clean Java 17 build passed; existing MDL instance exits at ModLauncher with LoadLibrary runtime_path not defined before Despotes loads. This is an MDL/instance runtime layout issue, not a mod failure.
+- Native 1.20.1: previous agent was build-only (transformer targeted named 
+et/minecraft/client/Minecraft, while vanilla runtime is obfuscated enn). Fixed with a TinyRemapper named-to-official packaging task plus official transformer targets (enn.s() / ex.a). Runtime validation: transformer hit and reported Minecraft transform OK, native core booted, HTTP 25599 came up, tick hook activated, ping/screen passed.
+
 ### Known issues
 
 - Root gradle.properties still at v26.0-Alpha.2 (cosmetic; subprojects override)

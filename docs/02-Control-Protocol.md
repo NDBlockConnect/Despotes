@@ -131,6 +131,42 @@ Note: independent of this command, Despotes automatically releases the mouse whe
 
 Batches execute in order, one per tick per command by default; `{"batch": [...], "parallel": true}` allows independent commands to share a tick.
 
+### 4.1 Batch control steps (v26.12+)
+
+Batch arrays can mix ordinary action/query objects with control steps. Steps run on the
+transport worker between command responses; their nested actions still use the normal
+client-thread dispatcher path.
+
+```json
+{
+  "batch": [
+    {"type": "look", "mode": "absolute", "yaw": 90, "pitch": 0},
+    {"step": "wait", "ms": 500},
+    {
+      "step": "condition",
+      "if": {"type": "status", "field": "result.inGame", "op": "exists"},
+      "then": [{"type": "ping"}],
+      "else": [{"type": "screenshot", "save": true}]
+    },
+    {
+      "step": "retry",
+      "command": {"type": "ping"},
+      "attempts": 3,
+      "intervalMs": 250
+    }
+  ]
+}
+```
+
+| Step | Fields | Behaviour |
+|---|---|---|
+| `wait` | `ms` (0-30000) | Pauses batch execution for the requested wall-clock time. |
+| `condition` | `if`, `then`, `else` | Evaluates the same query-field predicates as the `condition` action (`exists`, `eq`, `ne`, `gt`, `lt`, `contains`) then runs the selected branch inline. `value` belongs inside `if`. |
+| `retry` | `command`, `attempts` (1-10), `intervalMs` | Repeats a command until it returns `ok:true` or attempts are exhausted. |
+
+Errors may include optional structured `error.details` fields in addition to the stable
+`error.code` and `error.message` envelope.
+
 ## 5. CLI (stdin)
 
 Same JSON, one line each; responses are single JSON lines on stdout prefixed by nothing. Example session:

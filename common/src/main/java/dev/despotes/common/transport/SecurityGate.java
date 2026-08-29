@@ -237,8 +237,16 @@ public final class SecurityGate {
             String queryType = Json.normalize(Json.getStr(cond, "type", "status"));
             JsonObject qp = new JsonObject();
             qp.addProperty("type", queryType);
-            ActionContext qctx = new ActionContext(despotes, null, "batch", "batch");
-            Result qr = Actions.execute(qctx, qp);
+            // routeBatch runs on an HTTP worker; queries must hop to the client thread
+            // just like ordinary batch queries do before reading Minecraft state.
+            Result qr = despotes.platform().awaitOnClientThread(() -> {
+                ActionContext qctx = new ActionContext(despotes, null, "batch", "batch");
+                return Actions.execute(qctx, qp);
+            }, despotes.config().http.screenshotTimeoutMs);
+            if (qr == null) {
+                matched = false;
+                return c.has("else") ? c.getAsJsonArray("else") : null;
+            }
             JsonObject state = com.google.gson.JsonParser.parseString(qr.toJsonString(null)).getAsJsonObject();
             String fieldPath = Json.getStr(cond, "field", "");
             com.google.gson.JsonElement fv = null;
@@ -257,19 +265,28 @@ public final class SecurityGate {
             String op = Json.normalize(Json.getStr(cond, "op", "exists"));
             switch (op) {
                 case "exists" -> matched = fv != null && !fv.isJsonNull();
-                case "eq" -> matched = fv != null && c.has("value") && fv.equals(c.get("value"));
-                case "ne" -> matched = fv == null || !fv.equals(c.get("value"));
+                // v26.12: value belongs to the `if` object. Fall back to the
+                // outer step for compatibility with the standalone condition action.
+                case "eq" -> {
+                    com.google.gson.JsonElement expected = cond.has("value") ? cond.get("value") : c.get("value");
+                    matched = fv != null && expected != null && fv.equals(expected);
+                }
+                case "ne" -> {
+                    com.google.gson.JsonElement expected = cond.has("value") ? cond.get("value") : c.get("value");
+                    matched = fv == null || expected == null || !fv.equals(expected);
+                }
                 case "gt", "lt" -> {
                     if (fv == null || !fv.isJsonPrimitive()) {
                         matched = false;
                     } else {
                         double a = fv.getAsDouble();
-                        double e = Json.getDouble(c, "value", 0);
+                        double e = Json.getDouble(cond, "value", Json.getDouble(c, "value", 0));
                         matched = op.equals("gt") ? a > e : a < e;
                     }
                 }
                 case "contains" -> matched = fv != null && fv.isJsonPrimitive()
-                        && fv.getAsString().toLowerCase().contains(Json.getStr(c, "value", "").toLowerCase());
+                        && fv.getAsString().toLowerCase().contains(
+                                Json.getStr(cond, "value", Json.getStr(c, "value", "")).toLowerCase());
                 default -> matched = false;
             }
         } catch (Throwable t) {

@@ -32,14 +32,19 @@ import java.security.ProtectionDomain;
  */
 public final class DespotesTransformer implements ClassFileTransformer {
 
-    private static final String MINECRAFT = "net/minecraft/client/Minecraft";
-    private static final String CONNECTION = "net/minecraft/client/multiplayer/ClientPacketListener";
+    // Minecraft 1.20.1 vanilla runs Mojang's obfuscated runtime namespace. The
+    // native agent is remapped named -> official at packaging time; these string
+    // constants are transformer match keys and must therefore already be official.
+    private static final String MINECRAFT = "enn";
+    private static final String CONNECTION = "fex";
+    private static final String TICK_METHOD = "s";
     private static final String SYSTEM_CHAT_PACKET =
-            "(Lnet/minecraft/network/protocol/game/ClientboundSystemChatPacket;)V";
+            "(Lyo;)V";
     private static final String PLAYER_CHAT_PACKET =
-            "(Lnet/minecraft/network/protocol/game/ClientboundPlayerChatPacket;)V";
+            "(Lwt;)V";
     private static final String DISGUISED_CHAT_PACKET =
-            "(Lnet/minecraft/network/protocol/game/ClientboundDisguisedChatPacket;)V";
+            "(Lvt;)V";
+    private static final String CHAT_HANDLER = "a";
 
     private volatile boolean minecraftTransformed;
     private volatile boolean chatTransformed;
@@ -89,7 +94,7 @@ public final class DespotesTransformer implements ClassFileTransformer {
             public MethodVisitor visitMethod(int access, String name, String descriptor,
                                              String signature, String[] exceptions) {
                 MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
-                if (mv != null && "tick".equals(name) && "()V".equals(descriptor)) {
+                if (mv != null && TICK_METHOD.equals(name) && "()V".equals(descriptor)) {
                     return new AdviceAdapter(Opcodes.ASM9, mv, access, name, descriptor) {
                         @Override
                         protected void onMethodExit(int opcode) {
@@ -124,9 +129,9 @@ public final class DespotesTransformer implements ClassFileTransformer {
                     return null;
                 }
                 String hook = switch (descriptor) {
-                    case SYSTEM_CHAT_PACKET -> name.equals("handleSystemChat") ? "onSystemChat" : null;
-                    case PLAYER_CHAT_PACKET -> name.equals("handlePlayerChat") ? "onPlayerChat" : null;
-                    case DISGUISED_CHAT_PACKET -> name.equals("handleDisguisedChat") ? "onDisguisedChat" : null;
+                    case SYSTEM_CHAT_PACKET -> name.equals(CHAT_HANDLER) ? "onSystemChat" : null;
+                    case PLAYER_CHAT_PACKET -> name.equals(CHAT_HANDLER) ? "onPlayerChat" : null;
+                    case DISGUISED_CHAT_PACKET -> name.equals(CHAT_HANDLER) ? "onDisguisedChat" : null;
                     default -> null;
                 };
                 if (hook == null) {
