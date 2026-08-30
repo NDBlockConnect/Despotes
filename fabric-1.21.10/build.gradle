@@ -5,6 +5,10 @@ plugins {
 version = mod_version + '-fabric-1.21.10'
 group = maven_group
 
+base {
+    archivesName = 'Despotes'
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.officialMojangMappings()
@@ -39,6 +43,7 @@ processResources {
     filesMatching('fabric.mod.json') {
         expand version: mod_semver
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 }
 
 jar {

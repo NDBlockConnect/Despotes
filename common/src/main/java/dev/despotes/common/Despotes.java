@@ -34,7 +34,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.11";
+    public static final String VERSION = "v26.12-Alpha.2";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -43,6 +43,7 @@ public final class Despotes {
     private final DespotesConfig config;
     private final Dispatcher dispatcher;
     private final FocusManager focusManager;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     private final LookSmoother lookSmoother;
     private final OpLog opLog;
     private final EventBus eventBus = new EventBus();
@@ -88,6 +89,7 @@ public final class Despotes {
                 platform.log("[Despotes] focus yield on start failed: " + t);
             }
         }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         d.startTransports();
         platform.log("[Despotes] " + VERSION + " booted on loader '" + platform.loaderId()
                 + "' (MC " + platform.mcVersion() + "). Config: " + configPath);
@@ -133,6 +135,7 @@ public final class Despotes {
         navigator.tick();
         scheduleManager.tick(this);
         macroRecorder.tick(this);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         dispatcher.tick();
     }
 
@@ -178,6 +181,7 @@ public final class Despotes {
         return dispatcher;
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     public OpLog opLog() {
         return opLog;
     }
@@ -223,6 +227,7 @@ public final class Despotes {
         JsonObject o = new JsonObject();
         o.addProperty("despotesVersion", VERSION);
         o.addProperty("protocol", PROTOCOL_VERSION);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         o.addProperty("loader", platform.loaderId());
         o.addProperty("mcVersion", platform.mcVersion());
         o.addProperty("inGame", platform.inGame());

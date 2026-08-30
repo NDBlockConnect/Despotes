@@ -43,6 +43,7 @@ public final class MacroRecorder {
         step.command = command;
         activeRecording.steps.add(step);
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     public boolean play(String name) {
         Macro m = macros.get(name);
@@ -88,6 +89,7 @@ public final class MacroRecorder {
             Result r = Actions.execute(ctx, step.command);
             despotes.platform().log("[Macro:" + m.name + " step " + playbackTick + "] " + r.toJsonString(null));
         } catch (Throwable t) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             despotes.platform().log("[Macro:" + m.name + " step " + playbackTick + "] error: " + t.getMessage());
         }
         playbackTick++;

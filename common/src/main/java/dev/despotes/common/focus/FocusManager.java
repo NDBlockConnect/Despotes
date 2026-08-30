@@ -43,6 +43,7 @@ public final class FocusManager {
                             + "(external control requires an unpaused unfocused game).");
                 } catch (Throwable t) {
                     platform.log("[Despotes] failed to disable pause-on-lost-focus: " + t);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 }
             }
         }
@@ -90,6 +91,7 @@ public final class FocusManager {
             // If the game stole focus back within 1.5s of the user leaving, hand the OS
             // focus back to the user's window (best-effort, optional JNA).
             long sinceLossMs = (System.nanoTime() - lostNanos) / 1_000_000L;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             if (config.focus.returnFocusOnSteal && userForeground != null
                     && sinceLossMs < 1500) {
                 dev.despotes.common.focus.Win32Focus.setForeground(userForeground);

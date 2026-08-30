@@ -43,6 +43,7 @@ public final class OpLog {
                 file = Paths.get(config.visualization.opLogFile);
                 writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8,
                         StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             }
             writer.write(Json.stringify(entry.toJson()));
             writer.newLine();
@@ -88,6 +89,7 @@ public final class OpLog {
 
     public synchronized void close() {
         closeQuietly();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     private void closeQuietly() {

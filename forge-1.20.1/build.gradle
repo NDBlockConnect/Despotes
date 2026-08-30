@@ -24,7 +24,9 @@ base {
     archivesName = 'Despotes'
 }
 
-// Build with the JDK 17 that runs Gradle (no toolchain provisioning).
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
 
 minecraft {
     mappings channel: 'official', version: "${mc_version}"
@@ -41,6 +43,7 @@ sourceSets {
             srcDir file('../common/src/main/java')
             srcDir file('src/main/java')
         }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 }
 

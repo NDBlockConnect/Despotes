@@ -43,6 +43,7 @@ public final class DespotesAprismMod implements IAprismMod {
         try {
             ctx.getEventBus().register(GameTickEvent.class, event -> {
                 if (event.getStage() != GameTickEvent.Stage.END) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     return;
                 }
                 busDriven = true;
@@ -88,6 +89,7 @@ public final class DespotesAprismMod implements IAprismMod {
                         });
                     }
                 } catch (Throwable ignored) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 }
             }, 200, 50, TimeUnit.MILLISECONDS);
         }

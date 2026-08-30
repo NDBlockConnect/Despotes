@@ -43,6 +43,7 @@ public final class WsTransport implements ControlTransport {
         int port = despotes.config().http.port + 1; // default 25586
         SecurityGate gate = new SecurityGate(despotes);
         running = true;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         acceptThread = new Thread(() -> {
             try {
                 serverSocket = new ServerSocket();
@@ -88,6 +89,7 @@ public final class WsTransport implements ControlTransport {
             if (n <= 0) { socket.close(); return; }
             String request = new String(buf, 0, n, StandardCharsets.UTF_8);
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             // Check for WebSocket upgrade
             if (!request.contains("Upgrade: websocket") && !request.contains("Upgrade: WebSocket")) {
                 out.write("HTTP/1.1 400 Bad Request\r\n\r\n".getBytes(StandardCharsets.UTF_8));
@@ -133,6 +135,7 @@ public final class WsTransport implements ControlTransport {
                     }
                     sendFrame(out, resp);
                 } catch (Exception e) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     sendFrame(out, Json.error(null,
                             new dev.despotes.common.protocol.ProtocolError(
                                     dev.despotes.common.protocol.ProtocolError.Code.BAD_REQUEST,
@@ -178,6 +181,7 @@ public final class WsTransport implements ControlTransport {
         byte[] payload = new byte[payloadLen];
         int read = 0;
         while (read < payloadLen) { int r = in.read(payload, read, payloadLen - read); if (r < 0) return null; read += r; }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
         if (masked) {
             for (int i = 0; i < payload.length; i++) payload[i] ^= mask[i & 3];

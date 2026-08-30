@@ -43,6 +43,7 @@ public final class DespotesNeoForgeClient {
         NeoForge.EVENT_BUS.addListener((ClientChatReceivedEvent.Player e) -> {
             Despotes d = bootOnce();
             if (d == null) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 return;
             }
             JsonObject payload = new JsonObject();

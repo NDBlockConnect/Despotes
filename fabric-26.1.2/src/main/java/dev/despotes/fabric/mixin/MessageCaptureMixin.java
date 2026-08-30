@@ -43,6 +43,7 @@ public abstract class MessageCaptureMixin {
         }
         JsonObject payload = new JsonObject();
         payload.addProperty("message", message.getString());
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         payload.addProperty("kind", type);
         payload.addProperty("overlay", overlay);
         d.eventBus().publish(type, payload);

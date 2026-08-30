@@ -43,6 +43,7 @@ public final class Json {
 
     public static String ok(String requestId, JsonElement result) {
         JsonObject o = new JsonObject();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         o.addProperty("requestId", requestId == null ? "" : requestId);
         o.addProperty("ok", true);
         o.add("result", result);
@@ -71,6 +72,10 @@ public final class Json {
         JsonObject e = new JsonObject();
         e.addProperty("code", err.code().name());
         e.addProperty("message", err.getMessage());
+        // v26.12-Alpha.1: structured details when provided (field names, offending values).
+        if (err.details() != null) {
+            e.add("details", err.details());
+        }
         o.add("error", e);
         return stringify(o);
     }
@@ -84,6 +89,7 @@ public final class Json {
     }
 
     public static long getLong(JsonObject o, String key, long def) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return o.has(key) && o.get(key).isJsonPrimitive() ? o.get(key).getAsLong() : def;
     }
 

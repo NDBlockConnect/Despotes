@@ -43,6 +43,7 @@ public final class FabricPlatform implements IGamePlatform {
         return "fabric";
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     @Override
     public String mcVersion() {
         return SharedConstants.getCurrentVersion().id();
@@ -88,6 +89,7 @@ public final class FabricPlatform implements IGamePlatform {
     @Override
     public PlayerHandle player() {
         LocalPlayer p = Minecraft.getInstance().player;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return p == null ? null : new FabricPlayerHandle(p);
     }
 
@@ -133,6 +135,7 @@ public final class FabricPlatform implements IGamePlatform {
             // Route through the open screen so keys like ESC close menus.
             net.minecraft.client.input.KeyEvent event =
                     new net.minecraft.client.input.KeyEvent(key.getValue(), key.getValue(), 0);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             if (pressed) {
                 screen.keyPressed(event);
             } else {
@@ -179,6 +182,7 @@ public final class FabricPlatform implements IGamePlatform {
 
     @Override
     public void openChat() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         Minecraft mc = Minecraft.getInstance();
         if (!(mc.gui.screen() instanceof ChatScreen)) {
             mc.setScreenAndShow(new ChatScreen("", false));
@@ -224,6 +228,7 @@ public final class FabricPlatform implements IGamePlatform {
         GuiEventListener target = null;
         for (GuiEventListener child : s.children()) {
             if (child.isMouseOver(x, y)) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 target = child;
                 break;
             }
@@ -269,6 +274,7 @@ public final class FabricPlatform implements IGamePlatform {
         Direction dir = switch (face.toLowerCase()) {
             case "down" -> Direction.DOWN;
             case "north" -> Direction.NORTH;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             case "south" -> Direction.SOUTH;
             case "west" -> Direction.WEST;
             case "east" -> Direction.EAST;
@@ -314,6 +320,7 @@ public final class FabricPlatform implements IGamePlatform {
             var texture = target.getColorTexture();
             if (texture == null) {
                 done.accept(null);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 return;
             }
             var device = com.mojang.blaze3d.systems.RenderSystem.getDevice();
@@ -359,6 +366,7 @@ public final class FabricPlatform implements IGamePlatform {
         // Rendering is performed by HudOverlayMixin directly; kept as no-op hook.
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     // ---- mouse capture (focus-safe) ----
 
     @Override
@@ -404,6 +412,7 @@ public final class FabricPlatform implements IGamePlatform {
         return dev.despotes.common.probe.WorldProbes.entities(Minecraft.getInstance(), radius);
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     @Override
     public com.google.gson.JsonObject probeTarget() {
         return dev.despotes.common.probe.WorldProbes.target(Minecraft.getInstance());

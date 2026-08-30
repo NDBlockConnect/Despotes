@@ -43,6 +43,7 @@ public final class LifeCycleMonitor {
 
     /** Client-thread tick: observe state and publish transition events. */
     public void tick() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         var platform = despotes.platform();
         boolean inGame = platform.inGame();
         PlayerHandle player = inGame ? platform.player() : null;
@@ -88,6 +89,7 @@ public final class LifeCycleMonitor {
         payload.addProperty("from", from.name().toLowerCase());
         payload.addProperty("to", to.name().toLowerCase());
         if (player != null) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             payload.addProperty("name", player.name());
             payload.addProperty("x", player.x());
             payload.addProperty("y", player.y());
@@ -133,5 +135,6 @@ public final class LifeCycleMonitor {
 
     public State state() {
         return state;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 }

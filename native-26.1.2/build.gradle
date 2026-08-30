@@ -43,6 +43,7 @@ sourceSets {
 }
 
 tasks.withType(JavaCompile).configureEach {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     options.encoding = 'UTF-8'
     options.release = 25
 }
@@ -58,7 +59,7 @@ jar {
             'Implementation-Version' : mod_semver
         ])
     }
-    // v26.2-Alpha.3: embed the ASM classes so the agent jar is self-contained â€?the JVM
+    // v26.2-Alpha.3: embed the ASM classes so the agent jar is self-contained ï¿½?the JVM
     // only puts the agent jar itself on the system classpath at premain time.
     from {
         configurations.runtimeClasspath.filter { it.name.startsWith('asm') }.collect {

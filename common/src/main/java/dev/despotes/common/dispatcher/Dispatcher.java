@@ -43,6 +43,7 @@ public final class Dispatcher {
             this.requestId = requestId == null ? "" : requestId;
             this.sourceId = sourceId;
             this.transport = transport;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         }
     }
 
@@ -88,6 +89,7 @@ public final class Dispatcher {
             while (it.hasNext()) {
                 Scheduled s = it.next();
                 if (s.dueTick() <= tickCount) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     it.remove();
                     try {
                         s.task().run();
@@ -133,6 +135,7 @@ public final class Dispatcher {
             try {
                 ActionContext ctx = new ActionContext(despotes, cmd.requestId, cmd.sourceId, cmd.transport);
                 result = Actions.execute(ctx, cmd.json);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             } catch (ProtocolError e) {
                 result = Result.fail(e);
             } catch (Throwable t) {
@@ -178,5 +181,6 @@ public final class Dispatcher {
 
     public List<String> executingLines() {
         return executing;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 }

@@ -43,6 +43,7 @@ public final class NeoForgePlatform implements IGamePlatform {
 
     @Override
     public String mcVersion() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return SharedConstants.getCurrentVersion().id();
     }
 
@@ -88,6 +89,7 @@ public final class NeoForgePlatform implements IGamePlatform {
         LocalPlayer p = Minecraft.getInstance().player;
         return p == null ? null : new NeoForgePlayerHandle(p);
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     @Override
     public ScreenHandle screen() {
@@ -133,6 +135,7 @@ public final class NeoForgePlatform implements IGamePlatform {
                     new net.minecraft.client.input.KeyEvent(key.getValue(), key.getValue(), 0);
             if (pressed) {
                 screen.keyPressed(event);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             } else {
                 screen.keyReleased(event);
             }
@@ -178,6 +181,7 @@ public final class NeoForgePlatform implements IGamePlatform {
     @Override
     public void openChat() {
         Minecraft mc = Minecraft.getInstance();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (!(mc.gui.screen() instanceof ChatScreen)) {
             mc.setScreenAndShow(new ChatScreen("", false));
         }
@@ -223,6 +227,7 @@ public final class NeoForgePlatform implements IGamePlatform {
         for (GuiEventListener child : s.children()) {
             if (child.isMouseOver(x, y)) {
                 target = child;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 break;
             }
         }
@@ -268,6 +273,7 @@ public final class NeoForgePlatform implements IGamePlatform {
             case "down" -> Direction.DOWN;
             case "north" -> Direction.NORTH;
             case "south" -> Direction.SOUTH;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             case "west" -> Direction.WEST;
             case "east" -> Direction.EAST;
             default -> Direction.UP;
@@ -313,6 +319,7 @@ public final class NeoForgePlatform implements IGamePlatform {
             if (texture == null) {
                 done.accept(null);
                 return;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             }
             var device = com.mojang.blaze3d.systems.RenderSystem.getDevice();
             int blockSize = texture.getFormat().blockSize();
@@ -359,6 +366,7 @@ public final class NeoForgePlatform implements IGamePlatform {
 
     // ---- mouse capture (focus-safe) ----
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     @Override
     public void releaseMouseCapture() {
         Minecraft mc = Minecraft.getInstance();
@@ -404,6 +412,7 @@ public final class NeoForgePlatform implements IGamePlatform {
 
     @Override
     public com.google.gson.JsonObject probeTarget() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return dev.despotes.common.probe.WorldProbes.target(Minecraft.getInstance());
     }
 

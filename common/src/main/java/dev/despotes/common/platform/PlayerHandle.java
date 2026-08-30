@@ -43,6 +43,7 @@ public interface PlayerHandle {
         o.addProperty("health", health());
         o.addProperty("dead", dead());
         o.addProperty("dimension", dimension());
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         o.addProperty("selectedSlot", selectedHotbarSlot());
         return o;
     }

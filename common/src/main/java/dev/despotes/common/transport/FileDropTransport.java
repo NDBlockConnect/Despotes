@@ -43,6 +43,7 @@ public final class FileDropTransport implements ControlTransport {
             while (running) {
                 try {
                     int max = Math.max(1, despotes.config().fileDrop.maxPerTick);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     List<Path> files = listJson(dir);
                     int processed = 0;
                     for (Path f : files) {
@@ -88,6 +89,7 @@ public final class FileDropTransport implements ControlTransport {
         } catch (Exception ignored) {
         }
         Collections.sort(out);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return out;
     }
 
@@ -133,6 +135,7 @@ public final class FileDropTransport implements ControlTransport {
         running = false;
         if (thread != null) {
             thread.interrupt();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         }
     }
 }

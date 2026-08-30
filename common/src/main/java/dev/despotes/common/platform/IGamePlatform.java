@@ -48,6 +48,7 @@ public interface IGamePlatform {
      * waiting — the dispatcher parks the command's response future instead.
      */
     void beginCapture(ScreenshotOptions options, java.util.function.Consumer<ShotHandle> done);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     /** True when a client world is loaded and the player exists. */
     boolean inGame();
@@ -101,6 +102,7 @@ public interface IGamePlatform {
      * it falls back to {@link #sendChat(String)} only if the command channel is unavailable.
      */
     default void sendCommand(String command) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         String cmd = command.startsWith("/") ? command.substring(1) : command;
         try {
             Object mc = Class.forName("net.minecraft.client.Minecraft")
@@ -146,6 +148,7 @@ public interface IGamePlatform {
         }
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     /**
      * v26.3-Alpha.1: click a slot in the currently open container menu.
      *
@@ -191,6 +194,7 @@ public interface IGamePlatform {
             // Resolve Player superclass for method lookup (methods declare Player, not LocalPlayer)
             Class<?> playerClass = Class.forName("net.minecraft.world.entity.player.Player");
             String enumName = clickType.toUpperCase().replace("-", "_");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
             // Try 26.x API: handleContainerInput(int containerId, int slot, int button, ContainerInput, Player)
             try {
@@ -236,6 +240,7 @@ public interface IGamePlatform {
                             .invoke(menu, slotIndex, button, clickVal, player);
                     return true;
                 }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             }
         } catch (Throwable t) {
             log("[Despotes] slotClick failed: " + t);
@@ -281,6 +286,7 @@ public interface IGamePlatform {
     /** True when the game currently has the mouse cursor captured (grabbed). */
     default boolean isMouseCaptured() {
         return false;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     /**
@@ -333,6 +339,7 @@ public interface IGamePlatform {
      * {@code {"found":false}} when the entity is not loaded.
      */
     default com.google.gson.JsonObject findEntity(String uuid) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         com.google.gson.JsonObject o = new com.google.gson.JsonObject();
         try {
             java.util.UUID id = java.util.UUID.fromString(uuid);
@@ -378,6 +385,7 @@ public interface IGamePlatform {
     /** v26.2-Alpha.2 threat awareness: hostile mobs + projectiles within radius. */
     default com.google.gson.JsonObject probeThreats(double radius) {
         try {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             Object mc = Class.forName("net.minecraft.client.Minecraft")
                     .getMethod("getInstance").invoke(null);
             return dev.despotes.common.probe.WorldProbes.threats(
@@ -423,6 +431,7 @@ public interface IGamePlatform {
         }
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     /** v26.4-Alpha.2: server info query. */
     default com.google.gson.JsonObject probeServer() {
         try {
@@ -468,6 +477,7 @@ public interface IGamePlatform {
                     (net.minecraft.client.Minecraft) mc);
         } catch (Throwable t) {
             return new com.google.gson.JsonObject();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         }
     }
 
@@ -513,6 +523,7 @@ public interface IGamePlatform {
 
     /** v26.9-Alpha.1: redstone signal query at a block position. */
     default com.google.gson.JsonObject probeRedstone(int x, int y, int z) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         try {
             Object mc = Class.forName("net.minecraft.client.Minecraft")
                     .getMethod("getInstance").invoke(null);
@@ -558,6 +569,7 @@ public interface IGamePlatform {
             o.addProperty("width", guiW);
             o.addProperty("height", guiH);
             o.addProperty("guiScale", scale);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         } catch (Throwable t) {
             try {
                 // 26.x renamed some Window accessors; fall back to field-style reads.
@@ -604,6 +616,7 @@ public interface IGamePlatform {
 
     /** Close the current screen (null target) reflectively across versions. */
     private static void closeScreen(Object mc) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         try {
             // 26.x renamed setScreen -> setScreenAndShow
             try {

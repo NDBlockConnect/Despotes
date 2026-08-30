@@ -44,6 +44,7 @@ tasks.withType(JavaCompile).configureEach {
 // Gradle 9 removed project.manifest(Closure), so the manifest is generated as a file.
 def ajeManifestFile = layout.buildDirectory.file('aje-manifest/MANIFEST.MF')
 def generateAjeManifest = tasks.register('generateAjeManifest') {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     outputs.file(ajeManifestFile)
     doLast {
         def f = ajeManifestFile.get().asFile
@@ -90,4 +91,5 @@ jar {
                 'Specification-Version': mod_semver,
                 'Build-Jdk-Spec': '25')
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 }

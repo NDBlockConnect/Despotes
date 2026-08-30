@@ -43,6 +43,7 @@ public final class NativePlatform implements IGamePlatform {
         return "native";
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     @Override
     public String mcVersion() {
         return SharedConstants.getCurrentVersion().id();
@@ -88,6 +89,7 @@ public final class NativePlatform implements IGamePlatform {
     @Override
     public PlayerHandle player() {
         LocalPlayer p = Minecraft.getInstance().player;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return p == null ? null : new NativePlayerHandle(p);
     }
 
@@ -133,6 +135,7 @@ public final class NativePlatform implements IGamePlatform {
             // Route through the open screen so keys like ESC close menus.
             net.minecraft.client.input.KeyEvent event =
                     new net.minecraft.client.input.KeyEvent(key.getValue(), key.getValue(), 0);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             if (pressed) {
                 screen.keyPressed(event);
             } else {
@@ -179,6 +182,7 @@ public final class NativePlatform implements IGamePlatform {
 
     @Override
     public void openChat() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         Minecraft mc = Minecraft.getInstance();
         if (!(mc.screen instanceof ChatScreen)) {
             mc.setScreen(new ChatScreen("", false));
@@ -224,6 +228,7 @@ public final class NativePlatform implements IGamePlatform {
         GuiEventListener target = null;
         for (GuiEventListener child : s.children()) {
             if (child.isMouseOver(x, y)) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 target = child;
                 break;
             }
@@ -269,6 +274,7 @@ public final class NativePlatform implements IGamePlatform {
         Direction dir = switch (face.toLowerCase()) {
             case "down" -> Direction.DOWN;
             case "north" -> Direction.NORTH;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             case "south" -> Direction.SOUTH;
             case "west" -> Direction.WEST;
             case "east" -> Direction.EAST;
@@ -314,6 +320,7 @@ public final class NativePlatform implements IGamePlatform {
                     Path tmp = Files.createTempFile("despotes-shot-", ".png");
                     img.writeToFile(tmp);
                     byte[] bytes = Files.readAllBytes(tmp);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     Files.deleteIfExists(tmp);
                     done.accept(new NativeShotHandle(img.getWidth(), img.getHeight(), "png", bytes));
                     img.close();
@@ -360,6 +367,7 @@ public final class NativePlatform implements IGamePlatform {
 
     @Override
     public boolean runFunction(String fn) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return dev.despotes.common.action.FunctionActions.run(this, fn).get("handled").getAsBoolean();
     }
 

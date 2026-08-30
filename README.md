@@ -21,15 +21,15 @@ Despotes runs a small control server *inside* the Minecraft client process:
 | **External control sources** | A `despotes.json` file in the game directory declares which control sources are enabled: built-in HTTP server, stdin command line, file-drop directory, and plugin sources. |
 | **Visualization** | Every externally sourced operation is shown on an in-game overlay and appended to `despotes-oplog.jsonl`, so it is always visible *what* the external controller is doing. |
 
-## Compatibility (v26.0 line)
+## Compatibility (v26.12 line)
 
 | Platform | Branch | Minecraft versions |
 |---|---|---|
-| Minecraft Native (premain javaagent + Mixin) | `native` | 1.20 – 26.2 |
-| Aprism Native (`.aje`) | `aprism` | 26.1 – 26.2 |
-| Fabric | `fabric` | 1.20 – 26.2 |
-| NeoForge | `neoforge` | 1.20.1 – 26.2 |
-| Forge (≤ 1.21.4) | `forge` | 1.20 – 1.21.4 |
+| Minecraft Native (premain javaagent + Mixin) | `native` | 1.20.1, 1.21.1, 1.21.4, 1.21.10, 26.1.2, 26.2 |
+| Aprism Native (`.aje`) | `aprism` | 26.2 |
+| Fabric | `fabric` | 1.20.1, 1.21.1, 1.21.4, 1.21.10, 26.1.2, 26.2 |
+| NeoForge | `neoforge` | 1.21.1, 1.21.4, 1.21.10, 26.1.2, 26.2 |
+| Forge (≤ 1.21.1) | `forge` | 1.20.1, 1.21.1 |
 
 One branch per loader (branch specification follows Aprism docs §12). Each branch carries a `common/` copy of the loader-agnostic control core plus loader-specific entrypoints and version subprojects.
 
@@ -44,6 +44,8 @@ curl -X POST http://127.0.0.1:25585/despotes/v1/actions \
   -H "Content-Type: application/json" \
   -d '{"type":"key","keys":["key.keyboard.w"],"holdTicks":20}'
 ```
+
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
 See [docs/02-Control-Protocol.md](docs/02-Control-Protocol.md) for the full HTTP/CLI protocol and [docs/03-Configuration.md](docs/03-Configuration.md) for configuration.
 

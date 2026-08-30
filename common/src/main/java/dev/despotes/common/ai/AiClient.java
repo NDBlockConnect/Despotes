@@ -43,6 +43,7 @@ public final class AiClient {
         body.add("messages", msgs);
         body.addProperty("temperature", 0.2);
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         HttpRequest.Builder hb = HttpRequest.newBuilder(URI.create(ai.endpoint))
                 .timeout(Duration.ofMillis(ai.timeoutMs))
                 .header("Content-Type", "application/json")

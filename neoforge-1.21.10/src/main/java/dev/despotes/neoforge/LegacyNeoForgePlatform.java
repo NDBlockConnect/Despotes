@@ -44,6 +44,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
 
     @Override
     public String mcVersion() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return SharedConstants.getCurrentVersion().id();
     }
 
@@ -89,6 +90,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
         LocalPlayer p = Minecraft.getInstance().player;
         return p == null ? null : new LegacyNeoForgePlayerHandle(p);
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     @Override
     public ScreenHandle screen() {
@@ -134,6 +136,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
                     new net.minecraft.client.input.KeyEvent(key.getValue(), key.getValue(), 0);
             if (pressed) {
                 screen.keyPressed(event);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             } else {
                 screen.keyReleased(event);
             }
@@ -179,6 +182,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
     @Override
     public void openChat() {
         Minecraft mc = Minecraft.getInstance();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (!(mc.screen instanceof ChatScreen)) {
             mc.setScreen(new ChatScreen("", false));
         }
@@ -224,6 +228,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
             if (child.isMouseOver(x, y)) {
                 target = child;
                 break;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             }
         }
         if (target == null) {
@@ -269,6 +274,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
             case "north" -> Direction.NORTH;
             case "south" -> Direction.SOUTH;
             case "west" -> Direction.WEST;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             case "east" -> Direction.EAST;
             default -> Direction.UP;
         };
@@ -314,6 +320,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
                 }
             });
         } catch (Exception e) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             log("[Despotes] capture failed: " + e.getMessage());
             done.accept(null);
         }
@@ -359,6 +366,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
         return dev.despotes.common.probe.WorldProbes.blocks(Minecraft.getInstance(), x, y, z, r);
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     @Override
     public com.google.gson.JsonObject probeEntities(double radius) {
         return dev.despotes.common.probe.WorldProbes.entities(Minecraft.getInstance(), radius);

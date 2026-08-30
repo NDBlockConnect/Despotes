@@ -43,6 +43,7 @@ public final class NativePlatform implements IGamePlatform {
     public String loaderId() {
         return "native";
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     @Override
     public String mcVersion() {
@@ -88,6 +89,7 @@ public final class NativePlatform implements IGamePlatform {
 
     @Override
     public PlayerHandle player() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         LocalPlayer p = Minecraft.getInstance().player;
         return p == null ? null : new NativePlayerHandle(p);
     }
@@ -133,6 +135,7 @@ public final class NativePlatform implements IGamePlatform {
             net.minecraft.client.input.KeyEvent event =
                     new net.minecraft.client.input.KeyEvent(key.getValue(), key.getValue(), 0);
             if (pressed) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 screen.keyPressed(event);
             } else {
                 screen.keyReleased(event);
@@ -179,6 +182,7 @@ public final class NativePlatform implements IGamePlatform {
 
     @Override
     public void sendChat(String text) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         ClientPacketListener c = Minecraft.getInstance().getConnection();
         if (c != null) {
             c.sendChat(text);
@@ -224,6 +228,7 @@ public final class NativePlatform implements IGamePlatform {
             target.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(x, y,
                     new net.minecraft.client.input.MouseButtonInfo(button, shift ? 1 : 0)), shift);
         } else {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             target.mouseReleased(new net.minecraft.client.input.MouseButtonEvent(x, y,
                     new net.minecraft.client.input.MouseButtonInfo(button, shift ? 1 : 0)));
         }
@@ -269,6 +274,7 @@ public final class NativePlatform implements IGamePlatform {
         mc.gameMode.useItemOn(mc.player, h, hit);
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     @Override
     public void worldDropItem(boolean stack) {
         KeyMapping.click(MinecraftKeyAccess.boundKey(Minecraft.getInstance().options.keyDrop));
@@ -314,6 +320,7 @@ public final class NativePlatform implements IGamePlatform {
     public void releaseMouseCapture() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.mouseHandler.isMouseGrabbed()) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             mc.mouseHandler.releaseMouse();
         }
     }
@@ -360,6 +367,7 @@ public final class NativePlatform implements IGamePlatform {
 
     @Override
     public void setWindowMinimized(boolean minimized) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         dev.despotes.common.focus.WindowControl.setMinimized(Minecraft.getInstance().getWindow(), minimized);
     }
 

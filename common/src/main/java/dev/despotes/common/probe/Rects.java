@@ -43,6 +43,7 @@ public final class Rects {
             if (x != null) o.addProperty("x", x);
             if (y != null) o.addProperty("y", y);
             if (w != null) o.addProperty("w", w);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             if (h != null) o.addProperty("h", h);
         } catch (Throwable ignored) {
         }

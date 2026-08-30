@@ -43,6 +43,7 @@ public final class Result {
     }
 
     public String toJsonString(String requestId) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return ok ? Json.ok(requestId, result) : Json.error(requestId, error);
     }
 

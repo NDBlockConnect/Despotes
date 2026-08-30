@@ -45,6 +45,7 @@ public final class WorldProbes {
             "minecraft:guardian", "minecraft:elder_guardian", "minecraft:shulker", "minecraft:phantom",
             "minecraft:vex", "minecraft:ender_dragon", "minecraft:wither", "minecraft:warden",
             "minecraft:breeze", "minecraft:creaking");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     /** Hostile projectile type ids. */
     private static final Set<String> PROJECTILE_IDS = Set.of(
@@ -90,6 +91,7 @@ public final class WorldProbes {
             Field reg = BuiltInRegistries.class.getField("BIOME");
             Object registry = reg.get(null);
             Method getKey = registry.getClass().getMethod("getKey", Object.class);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             o.addProperty("biome", String.valueOf(getKey.invoke(registry, biome)));
         } catch (Throwable ignored) {
         }
@@ -135,6 +137,7 @@ public final class WorldProbes {
         var player = mc.player;
         if (level == null || player == null) {
             o.add("entities", new JsonArray());
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             return o;
         }
         AABB box = new AABB(player.blockPosition()).inflate(radius);
@@ -180,6 +183,7 @@ public final class WorldProbes {
         o.add("threats", arr);
         return o;
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     private static boolean isThreat(Entity e) {
         String id = String.valueOf(BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()));
@@ -225,6 +229,7 @@ public final class WorldProbes {
         o.addProperty("airSupply", callInt(player, "getAirSupply"));
         o.addProperty("maxAirSupply", callInt(player, "getMaxAirSupply"));
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         // Experience (public fields on Player across versions)
         Integer xpLevel = fieldInt(player, "experienceLevel");
         if (xpLevel != null) {
@@ -270,6 +275,7 @@ public final class WorldProbes {
             if (collection instanceof Collection<?> list) {
                 Field reg = BuiltInRegistries.class.getField("MOB_EFFECT");
                 Object registry = reg.get(null);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 Method getKey = registry.getClass().getMethod("getKey", Object.class);
                 for (Object inst : list) {
                     JsonObject j = new JsonObject();
@@ -315,6 +321,7 @@ public final class WorldProbes {
             o.addProperty("x", bhr.getBlockPos().getX());
             o.addProperty("y", bhr.getBlockPos().getY());
             o.addProperty("z", bhr.getBlockPos().getZ());
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             o.addProperty("face", String.valueOf(bhr.getDirection()));
             if (mc.level != null) {
                 BlockState st = mc.level.getBlockState(bhr.getBlockPos());
@@ -360,6 +367,7 @@ public final class WorldProbes {
                     arr.add(j);
                 });
         o.addProperty("radius", radius);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         o.addProperty("count", arr.size());
         o.add("players", arr);
         return o;
@@ -405,6 +413,7 @@ public final class WorldProbes {
                         Object result = conn.getClass().getMethod(mn).invoke(conn);
                         if (result instanceof Collection<?> c) {
                             JsonArray arr = new JsonArray();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                             for (Object info : c) {
                                 JsonObject j = new JsonObject();
                                 // PlayerInfo.getName() / getProfile().getName()
@@ -450,6 +459,7 @@ public final class WorldProbes {
             JsonArray teams = new JsonArray();
             try {
                 Object teamCollection = scoreboard.getClass().getMethod("getPlayerTeams").invoke(scoreboard);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 if (teamCollection instanceof Collection<?> c) {
                     for (Object team : c) {
                         JsonObject t = new JsonObject();
@@ -495,6 +505,7 @@ public final class WorldProbes {
             if (spawnPos != null) {
                 JsonObject s = new JsonObject();
                 s.addProperty("x", ((Number) spawnPos.getClass().getMethod("getX").invoke(spawnPos)).intValue());
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 s.addProperty("y", ((Number) spawnPos.getClass().getMethod("getY").invoke(spawnPos)).intValue());
                 s.addProperty("z", ((Number) spawnPos.getClass().getMethod("getZ").invoke(spawnPos)).intValue());
                 o.add("spawn", s);
@@ -540,6 +551,7 @@ public final class WorldProbes {
             return o;
         }
         try {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             // Resolve RecipeManager: try multiple access paths across versions
             Object recipeMgr = null;
             // Path 1: mc.level.getRecipeManager()
@@ -585,6 +597,7 @@ public final class WorldProbes {
                         if (colls instanceof Collection<?> c) {
                             recipeCollections = (Collection<Object>) c;
                         }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     } catch (Throwable ignored) {}
                 }
             }
@@ -630,6 +643,7 @@ public final class WorldProbes {
             if ((knownIds == null || knownIds.isEmpty()) && recipeMgr != null) {
                 Object allRecipes = null;
                 String usedMethod = null;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 for (String mn : new String[]{"getRecipes", "getAllRecipes", "values", "recipeCollection"}) {
                     try {
                         allRecipes = recipeMgr.getClass().getMethod(mn).invoke(recipeMgr);
@@ -675,6 +689,7 @@ public final class WorldProbes {
                 for (Object idObj : knownIds) {
                     JsonObject r = recipeEntryById(recipeMgr, idObj);
                     if (r != null) knownArr.add(r);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 }
             }
             JsonArray hlArr = new JsonArray();
@@ -720,6 +735,7 @@ public final class WorldProbes {
     /** Fill in recipe details (result item, type) from a RecipeHolder or Recipe. */
     private static void fillRecipeEntry(JsonObject r, Object recipeHolder) {
         try {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             // RecipeHolder.id() + RecipeHolder.value()
             Object recipe = null;
             try {
@@ -765,6 +781,7 @@ public final class WorldProbes {
             // Try to get the recipe and its result
             Object recipe = null;
             try {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 recipe = recipeHolder.getClass().getMethod("value").invoke(recipeHolder);
             } catch (NoSuchMethodException e) {
                 recipe = recipeHolder; // pre-RecipeHolder or the object IS the recipe
@@ -810,6 +827,7 @@ public final class WorldProbes {
                 i++;
                 continue;
             }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             com.google.gson.JsonObject j = new com.google.gson.JsonObject();
             j.addProperty("slot", i);
             j.addProperty("item", String.valueOf(
@@ -855,6 +873,7 @@ public final class WorldProbes {
         String key = o.getClass().getName() + '#' + method;
         Method m = METHOD_CACHE.get(key);
         if (m == null) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             m = o.getClass().getMethod(method);
             METHOD_CACHE.put(key, m);
         }
@@ -900,6 +919,7 @@ public final class WorldProbes {
         } catch (Throwable t) {
             return -1f;
         }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     private static boolean callBool(Object o, String method) {
@@ -945,6 +965,7 @@ public final class WorldProbes {
                 Field f = c.getDeclaredField(name);
                 f.setAccessible(true);
                 return f;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             } catch (NoSuchFieldException e) {
                 c = c.getSuperclass();
             }
@@ -990,6 +1011,7 @@ public final class WorldProbes {
             for (var dir : net.minecraft.core.Direction.values()) {
                 int signal = (int) getSignal.invoke(level, pos, dir);
                 if (signal > maxSignal) maxSignal = signal;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             }
             o.addProperty("signal", maxSignal);
         } catch (Throwable t) {
@@ -1036,6 +1058,7 @@ public final class WorldProbes {
 
     /** True when the block id looks like a circuit component. */
     private static boolean isCircuitComponent(String blockId) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         for (String frag : CIRCUIT_FRAGMENTS) {
             if (blockId.contains(frag)) {
                 return true;
@@ -1081,6 +1104,7 @@ public final class WorldProbes {
                     j.addProperty("z", p.getZ());
                     // powered flag (present on most interactive components)
                     Boolean powered = stateBool(st, "powered");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     if (powered != null) {
                         j.addProperty("powered", powered);
                     }
@@ -1126,6 +1150,7 @@ public final class WorldProbes {
         }
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     /** Read an integer blockstate property reflectively ("delay"/"note"/...). */
     private static Integer stateInt(BlockState st, String name) {
         try {

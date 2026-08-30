@@ -43,6 +43,7 @@ public final class PathNavigator {
     /** Navigate to a coordinate. Returns true if navigation started. */
     public boolean gotoCoords(double x, double y, double z, double stopDistance) {
         this.targetX = x;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         this.targetY = y;
         this.targetZ = z;
         this.followingEntity = false;
@@ -88,6 +89,7 @@ public final class PathNavigator {
         IGamePlatform p = despotes.platform();
         if (!p.inGame()) { stop(); return; }
         PlayerHandle player = p.player();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (player == null) { stop(); return; }
 
         ticksRun++;
@@ -133,6 +135,7 @@ public final class PathNavigator {
         // Normalize horizontal direction
         double dirX = dx / Math.max(0.01, horizontal);
         double dirZ = dz / Math.max(0.01, horizontal);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
         // Check if we need to jump (target is above us or there's a block in front)
         boolean needJump = dy > 0.5 && recheckCounter % 5 == 0;
@@ -180,6 +183,7 @@ public final class PathNavigator {
                                 && !block.contains("carpet") && !block.contains("rail")
                                 && !block.contains("sign") && !block.contains("ladder")
                                 && !block.contains("vine") && !block.contains("door")) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                             return true;
                         }
                     }

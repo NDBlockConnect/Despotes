@@ -43,6 +43,7 @@ public final class HttpTransport implements ControlTransport {
                 return t;
             }));
             server.createContext("/despotes/v1/actions", this::handleActions);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             server.createContext("/despotes/v1/query", this::handleQuery);
             server.createContext("/despotes/v1/status", this::handleStatus);
             server.createContext("/despotes/v1/screenshot", this::handleScreenshot);
@@ -90,6 +91,7 @@ public final class HttpTransport implements ControlTransport {
      * agents can stream events without hammering the endpoint.
      */
     private void handleEvents(HttpExchange ex) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (!"GET".equalsIgnoreCase(ex.getRequestMethod())) {
             sendJson(ex, 405, Json.error(null, ProtocolError.badRequest("GET required")));
             return;
@@ -135,6 +137,7 @@ public final class HttpTransport implements ControlTransport {
                         Thread.currentThread().interrupt();
                         break;
                     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     events = despotes.eventBus().since(since);
                 }
             }
@@ -181,6 +184,7 @@ public final class HttpTransport implements ControlTransport {
             if (!cfg.enabled) {
                 sendJson(ex, 200, Json.error(requestId,
                         dev.despotes.common.protocol.ProtocolError.forbidden("ai is disabled")));
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 return;
             }
             String message = Json.getStr(req, "message", "");
@@ -226,6 +230,7 @@ public final class HttpTransport implements ControlTransport {
                             new dev.despotes.common.action.ActionContext(despotes, requestId, "assistant", "assistant"), a);
                     results.add(com.google.gson.JsonParser.parseString(r.toJsonString(requestId)));
                 }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             }
             out.add("results", results);
             sendJson(ex, 200, Json.ok(requestId, out));
@@ -271,6 +276,7 @@ public final class HttpTransport implements ControlTransport {
     private void handleQuery(HttpExchange ex) {
         handleActions(ex);
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     private void handleStatus(HttpExchange ex) {
         try {
@@ -316,6 +322,7 @@ public final class HttpTransport implements ControlTransport {
                     limit = Integer.parseInt(q.substring(6));
                 } catch (NumberFormatException ignored) {
                 }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             }
             com.google.gson.JsonArray arr = despotes.opLog().recent(limit);
             sendJson(ex, 200, Json.ok("", arr));

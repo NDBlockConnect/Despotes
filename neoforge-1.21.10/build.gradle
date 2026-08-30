@@ -45,6 +45,7 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21
 }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
 // NeoForm's Vineflower decompiler fails on EntitySectionStorage.getEntities in 1.21.10,
 // emitting an illegal "// $VF: Couldn't be decompiled" lambda placeholder. Patch the
@@ -90,3 +91,4 @@ tasks.withType(ProcessResources).configureEach {
 jar {
     archiveVersion = mod_version + '-neoforge-1.21.10'
 }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover

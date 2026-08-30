@@ -43,6 +43,7 @@ public final class LookSmoother {
         }
         float curYaw = player.yaw();
         float curPitch = player.pitch();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (durationMs <= 0) {
             active = false;
             platform.setRotation(targetYaw, targetPitch);
@@ -88,6 +89,7 @@ public final class LookSmoother {
             return;
         }
         float t = (System.nanoTime() - startNanos) / (float) durationNanos;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (t >= 1f) {
             active = false;
             platform.setRotation(targetYaw, targetPitch);
