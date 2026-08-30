@@ -43,6 +43,7 @@ sourceSets {
             srcDir file('../common/src/main/java')
             srcDir file('src/main/java')
         }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 }
 

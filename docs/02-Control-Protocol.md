@@ -45,6 +45,8 @@ Error codes: `BAD_REQUEST`, `UNKNOWN_TYPE`, `NOT_IN_GAME`, `NOT_ON_SCREEN`, `QUE
   "submit": true, "perTickChars": 8 }
 ```
 
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
+
 - `chat`: opens chat (if needed), types, optionally submits.
 - `focused`: appends to the currently focused edit box.
 - `command`: shorthand for chat text starting with `/`.
@@ -92,6 +94,8 @@ Without `target`, `attack`/`useItem` act on whatever the crosshair is over.
 { "type": "screenshot", "format": "png" | "jpg", "quality": 0.8,
   "save": false, "path": null, "maxWidth": 0 }
 ```
+
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
 Returns `{ "width": w, "height": h, "format": "png", "base64": "..." }` or, with `save: true`, `{ "path": "<absolute path>" }`.
 
@@ -157,6 +161,8 @@ client-thread dispatcher path.
   ]
 }
 ```
+
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
 | Step | Fields | Behaviour |
 |---|---|---|

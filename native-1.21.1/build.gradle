@@ -44,6 +44,7 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21
 }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
 jar {
     archiveVersion = mod_version + '-native-1.21.1'

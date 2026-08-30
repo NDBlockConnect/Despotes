@@ -44,6 +44,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
 
     @Override
     public String mcVersion() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return SharedConstants.getCurrentVersion().getId();
     }
 
@@ -89,6 +90,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
         LocalPlayer p = Minecraft.getInstance().player;
         return p == null ? null : new LegacyNeoForgePlayerHandle(p);
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     @Override
     public ScreenHandle screen() {
@@ -134,6 +136,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
                 screen.keyPressed(key.getValue(), key.getValue(), 0);
             } else {
                 screen.keyReleased(key.getValue(), key.getValue(), 0);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             }
             return;
         }
@@ -179,6 +182,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
         Minecraft mc = Minecraft.getInstance();
         if (!(mc.screen instanceof ChatScreen)) {
             mc.setScreen(new ChatScreen(""));
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         }
     }
 
@@ -224,6 +228,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
                 break;
             }
         }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (target == null) {
             target = s;
         }
@@ -269,6 +274,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
             case "west" -> Direction.WEST;
             case "east" -> Direction.EAST;
             default -> Direction.UP;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         };
         Vec3 location = Vec3.atCenterOf(pos.relative(dir));
         BlockHitResult hit = new BlockHitResult(location, dir, pos, false);
@@ -314,6 +320,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
         if (mc.mouseHandler.isMouseGrabbed()) {
             mc.mouseHandler.releaseMouse();
         }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     @Override
@@ -359,6 +366,7 @@ public final class LegacyNeoForgePlatform implements IGamePlatform {
     @Override
     public void setWindowMinimized(boolean minimized) {
         dev.despotes.common.focus.WindowControl.setMinimized(Minecraft.getInstance().getWindow(), minimized);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     @Override

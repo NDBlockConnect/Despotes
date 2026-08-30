@@ -43,6 +43,7 @@ public final class SecurityGate {
                 List<String> allow = despotes.config().security.allowSources;
                 String host = addr == null ? "" : addr.getHostAddress();
                 if (!allow.contains(host)) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     throw ProtocolError.forbidden("source not allowed: " + host);
                 }
             }
@@ -88,6 +89,7 @@ public final class SecurityGate {
                 if (r == null) {
                     return Json.error(requestId, ProtocolError.timeout("query timed out"));
                 }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 despotes.latency().record(0, execUs.get());
                 return r.toJsonString(requestId, 0, execUs.get());
             }
@@ -133,6 +135,7 @@ public final class SecurityGate {
                         }
                         JsonObject w = new JsonObject();
                         w.addProperty("step", "wait");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                         w.addProperty("ms", ms);
                         w.addProperty("ok", true);
                         results.add(w);
@@ -178,6 +181,7 @@ public final class SecurityGate {
                             bad.addProperty("step", "retry");
                             bad.addProperty("ok", false);
                             bad.addProperty("error", "retry requires 'command'");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                             results.add(bad);
                             continue;
                         }
@@ -228,6 +232,7 @@ public final class SecurityGate {
      * to the standalone {@code condition} action.
      */
     private JsonArray evaluateBranch(JsonObject c) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         JsonObject cond = c.has("if") && c.get("if").isJsonObject() ? c.getAsJsonObject("if") : null;
         if (cond == null) {
             return c.has("else") ? c.getAsJsonArray("else") : null;
@@ -273,6 +278,7 @@ public final class SecurityGate {
                 }
                 case "ne" -> {
                     com.google.gson.JsonElement expected = cond.has("value") ? cond.get("value") : c.get("value");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     matched = fv == null || expected == null || !fv.equals(expected);
                 }
                 case "gt", "lt" -> {
@@ -318,6 +324,7 @@ public final class SecurityGate {
                 if (r == null) {
                     parsed = JsonParser.parseString(Json.error(rid, ProtocolError.timeout("query timed out"))).getAsJsonObject();
                 } else {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     despotes.latency().record(0, execUs.get());
                     parsed = JsonParser.parseString(r.toJsonString(rid, 0, execUs.get())).getAsJsonObject();
                 }

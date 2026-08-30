@@ -43,6 +43,7 @@ public final class DespotesForgeClient {
             payload.addProperty("sender", String.valueOf(e.getSender()));
             d.eventBus().publish("chat", payload);
         });
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         MinecraftForge.EVENT_BUS.addListener((ClientChatReceivedEvent.System e) -> {
             Despotes d = bootOnce();
             if (d == null) {

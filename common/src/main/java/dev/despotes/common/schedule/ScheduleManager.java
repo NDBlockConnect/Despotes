@@ -43,6 +43,7 @@ public final class ScheduleManager {
     public Schedule get(String name) {
         return schedules.get(name);
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     public List<Schedule> all() {
         return new ArrayList<>(schedules.values());
@@ -88,6 +89,7 @@ public final class ScheduleManager {
         return o;
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     public static final class Schedule {
         public final long id;
         public final String name;

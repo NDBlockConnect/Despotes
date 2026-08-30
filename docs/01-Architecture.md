@@ -47,6 +47,8 @@ The **common** source set contains everything above the platform layer and is by
 - A client tick event drains at most `maxActionsPerTick` (default 4) commands and executes them **on the game thread**, guaranteeing thread safety against game state.
 - `Screenshot` executes on the render thread via the platform's frame-end hook; the HTTP response blocks until the capture completes (timeout 5 s default).
 
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
+
 ### 3.2 Transports
 
 | Transport | Endpoint | Enabled by default |
@@ -98,6 +100,8 @@ public interface IGamePlatform {
     void log(String line);
 }
 ```
+
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
 Handles (`PlayerHandle`, `ScreenHandle`, …) are common-layer interfaces implemented per loader with version-adapter classes. This isolates every Minecraft symbol to the platform module, keeping the dispatcher/actions loader-agnostic.
 

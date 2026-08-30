@@ -43,6 +43,7 @@ public final class FunctionActions {
                     p.injectKey("key.keyboard.e", true);
                     p.injectKey("key.keyboard.e", false);
                 } else {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     handled = false;
                 }
                 break;
@@ -88,6 +89,7 @@ public final class FunctionActions {
             Method m = Minecraft.class.getDeclaredMethod("toggleFullscreen");
             m.setAccessible(true);
             m.invoke(mc);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             return true;
         } catch (Exception e) {
             return false;

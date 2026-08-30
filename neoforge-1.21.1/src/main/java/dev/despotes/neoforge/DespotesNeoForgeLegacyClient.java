@@ -43,6 +43,7 @@ public final class DespotesNeoForgeLegacyClient {
             }
             JsonObject payload = new JsonObject();
             payload.addProperty("message", e.getMessage().getString());
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             payload.addProperty("kind", "chat");
             payload.addProperty("sender", String.valueOf(e.getSender()));
             d.eventBus().publish("chat", payload);

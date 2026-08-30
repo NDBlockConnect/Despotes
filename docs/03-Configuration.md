@@ -66,6 +66,8 @@ Despotes reads **`despotes.json`** from the game directory (the directory that c
 }
 ```
 
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
+
 ## 2. External control sources
 
 `sources` is the list of configured control sources. Built-in transports: `http`, `cli`, `filedrop`. A source is active only if **both** its `enabled` flag and its transport's section are enabled.

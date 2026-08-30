@@ -43,6 +43,7 @@ public final class DespotesAgent {
     public static void premain(String args, Instrumentation inst) {
         registerTransformer(inst);
         agentmain(args, inst);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     public static void agentmain(String args, Instrumentation inst) {
@@ -88,6 +89,7 @@ public final class DespotesAgent {
             if (mc == null) {
                 return;
             }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             mc.execute(() -> {
                 Despotes d = Despotes.get() != null ? Despotes.get() : Despotes.boot(new NativePlatform());
                 d.clientTick();

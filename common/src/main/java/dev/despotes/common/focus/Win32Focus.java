@@ -43,6 +43,7 @@ public final class Win32Focus {
         }
         try {
             return getForegroundWindow.invoke(user32);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         } catch (Throwable t) {
             return null;
         }

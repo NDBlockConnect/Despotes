@@ -44,6 +44,7 @@ public final class DespotesTransformer implements ClassFileTransformer {
             "(Lwt;)V";
     private static final String DISGUISED_CHAT_PACKET =
             "(Lvt;)V";
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     private static final String CHAT_HANDLER = "a";
 
     private volatile boolean minecraftTransformed;
@@ -89,6 +90,7 @@ public final class DespotesTransformer implements ClassFileTransformer {
     private byte[] instrumentTick(byte[] bytes) {
         ClassReader cr = new ClassReader(bytes);
         ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         ClassVisitor cv = new ClassVisitor(Opcodes.ASM9, cw) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String descriptor,
@@ -134,6 +136,7 @@ public final class DespotesTransformer implements ClassFileTransformer {
                     case DISGUISED_CHAT_PACKET -> name.equals(CHAT_HANDLER) ? "onDisguisedChat" : null;
                     default -> null;
                 };
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 if (hook == null) {
                     return mv;
                 }

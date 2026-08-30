@@ -44,6 +44,7 @@ public final class EventBus {
 
     /** Highest sequence number assigned so far (0 when empty). */
     public synchronized long lastSeq() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return nextSeq - 1;
     }
 

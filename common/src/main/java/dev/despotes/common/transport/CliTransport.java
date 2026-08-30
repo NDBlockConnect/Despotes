@@ -43,6 +43,7 @@ public final class CliTransport implements ControlTransport {
                         JsonObject cmd = Json.parseCommand(trimmed);
                         if (cmd.has("batch") && cmd.get("batch").isJsonArray()) {
                             resp = gate.routeBatch("cli", cmd, null);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                         } else {
                             resp = gate.route("cli", cmd, null);
                         }

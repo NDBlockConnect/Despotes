@@ -43,6 +43,7 @@ public final class DespotesHooks {
     public static String companionLoader() {
         return companionLoader;
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     /**
      * Resolve who owns the Despotes control core from the game's viewpoint.
@@ -88,6 +89,7 @@ public final class DespotesHooks {
     /** Instrumented at every normal exit of {@code Minecraft.tick()V}. Runs on the client thread. */
     public static void onClientTick(Object mc) {
         try {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             if (companionLoader == null) {
                 String owner = probeOwnership(mc);
                 if (owner != null && !OWNER_NATIVE.equals(owner)) {
@@ -133,6 +135,7 @@ public final class DespotesHooks {
             }
             Despotes d = Despotes.get();
             Object content = call(packet, "content");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             boolean overlay = callBool(packet, "overlay");
             JsonObject payload = new JsonObject();
             payload.addProperty("message", text(content));
@@ -178,6 +181,7 @@ public final class DespotesHooks {
                 return;
             }
             Despotes d = Despotes.get();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             JsonObject payload = new JsonObject();
             // The disguised chat packet is a record: the accessor is message(), not content().
             payload.addProperty("message", text(call(packet, "message")));

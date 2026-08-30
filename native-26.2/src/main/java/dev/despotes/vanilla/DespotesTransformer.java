@@ -43,6 +43,7 @@ public final class DespotesTransformer implements ClassFileTransformer {
 
     private volatile boolean minecraftTransformed;
     private volatile boolean chatTransformed;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
@@ -88,6 +89,7 @@ public final class DespotesTransformer implements ClassFileTransformer {
             @Override
             public MethodVisitor visitMethod(int access, String name, String descriptor,
                                              String signature, String[] exceptions) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
                 if (mv != null && "tick".equals(name) && "()V".equals(descriptor)) {
                     return new AdviceAdapter(Opcodes.ASM9, mv, access, name, descriptor) {
@@ -133,6 +135,7 @@ public final class DespotesTransformer implements ClassFileTransformer {
                     return mv;
                 }
                 return new AdviceAdapter(Opcodes.ASM9, mv, access, name, descriptor) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     @Override
                     protected void onMethodEnter() {
                         mv.visitVarInsn(Opcodes.ALOAD, 1);

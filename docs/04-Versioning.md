@@ -1,6 +1,6 @@
 # Despotes Versioning
 
-> Doc 4 / 4 | Despotes Docs > Version: v26.0
+> Doc 4 / 4 | Despotes Docs > Version: v26.12
 
 Despotes follows the Aprism version scheme (Aprism docs §12.1), adapted for a mod:
 
@@ -33,15 +33,15 @@ Each GitHub release contains every artifact built in that cycle plus a `RELEASE_
 
 Per Aprism §12 branch spec: one branch per loader — `fabric`, `neoforge`, `forge`, `native`, `aprism` — plus `main` (docs/spec only). Tags are cut from the loader branches; a release aggregates artifacts from all loader branches at the same version.
 
-## 4. Minecraft support per line (v26.0 minimum goal)
+## 4. Minecraft support per line (v26.12)
 
-| Loader | MC range |
+| Loader | MC versions |
 |---|---|
-| native | 1.20 – 26.2 |
-| fabric | 1.20 – 26.2 |
-| neoforge | 1.20.1 – 26.2 |
-| forge | 1.20 – 1.21.4 |
-| aprism | 26.1 – 26.2 (Aprism Loader v26 line) |
+| native | 1.20.1, 1.21.1, 1.21.4, 1.21.10, 26.1.2, 26.2 |
+| fabric | 1.20.1, 1.21.1, 1.21.4, 1.21.10, 26.1.2, 26.2 |
+| neoforge | 1.21.1, 1.21.4, 1.21.10, 26.1.2, 26.2 |
+| forge | 1.20.1, 1.21.1 |
+| aprism | 26.2 (Aprism Loader v26 line) |
 
 ## 5. Interface contract
 

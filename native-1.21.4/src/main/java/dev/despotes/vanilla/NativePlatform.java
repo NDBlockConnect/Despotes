@@ -43,6 +43,7 @@ public final class NativePlatform implements IGamePlatform {
     public String loaderId() {
         return "native";
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     @Override
     public String mcVersion() {
@@ -88,6 +89,7 @@ public final class NativePlatform implements IGamePlatform {
 
     @Override
     public PlayerHandle player() {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         LocalPlayer p = Minecraft.getInstance().player;
         return p == null ? null : new NativePlayerHandle(p);
     }
@@ -133,6 +135,7 @@ public final class NativePlatform implements IGamePlatform {
             if (pressed) {
                 screen.keyPressed(key.getValue(), key.getValue(), 0);
             } else {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 screen.keyReleased(key.getValue(), key.getValue(), 0);
             }
             return;
@@ -178,6 +181,7 @@ public final class NativePlatform implements IGamePlatform {
     @Override
     public void sendChat(String text) {
         ClientPacketListener c = Minecraft.getInstance().getConnection();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (c != null) {
             c.sendChat(text);
         }
@@ -223,6 +227,7 @@ public final class NativePlatform implements IGamePlatform {
         } else {
             target.mouseReleased(x, y, button);
         }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     @Override
@@ -268,6 +273,7 @@ public final class NativePlatform implements IGamePlatform {
     @Override
     public void worldDropItem(boolean stack) {
         KeyMapping.click(MinecraftKeyAccess.boundKey(Minecraft.getInstance().options.keyDrop));
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     @Override
@@ -313,6 +319,7 @@ public final class NativePlatform implements IGamePlatform {
         mc.mouseHandler.grabMouse();
     }
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     @Override
     public boolean isMouseCaptured() {
         Minecraft mc = Minecraft.getInstance();

@@ -1,8 +1,12 @@
 buildscript {
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.fabricmc.net/' }
+    }
     dependencies {
+        classpath 'net.fabricmc:tiny-remapper:0.12.3'
+        classpath 'net.fabricmc:mapping-io:0.7.1'
         classpath files(
-                'C:/Users/Sails/.gradle/caches/modules-2/files-2.1/net.fabricmc/tiny-remapper/0.12.3/e05d26aaf2bd8c2ee595d1c3af1e2cb609925cc9/tiny-remapper-0.12.3.jar',
-                'C:/Users/Sails/.gradle/caches/modules-2/files-2.1/net.fabricmc/mapping-io/0.7.1/e96e1dda50d631c89f83ad5c2c951c3f2298e7c2/mapping-io-0.7.1.jar',
                 'C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm/asm/9.10.1/asm-9.10.1.jar',
                 'C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm/asm-analysis/9.10.1/asm-analysis-9.10.1.jar',
                 'C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm/asm-commons/9.10.1/asm-commons-9.10.1.jar',
@@ -21,9 +25,8 @@ base {
     archivesName = 'Despotes'
 }
 
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(17)
-}
+// Compiled with the daemon JDK's javac at --release 17; no separate toolchain fork
+// (a forked JDK 17 compiler daemon dies on this memory-constrained host).
 
 // Official-named 1.20.1 client jar produced by the Fabric Loom cache.
 def mcClient = file("C:/Users/Sails/Documents/Workspace/01-Active/Domain-Projects/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-b7a764897f/1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2/minecraft-merged-b7a764897f-1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2.jar")
@@ -43,6 +46,7 @@ dependencies {
             file("$asmDir/asm-tree/9.10.1/asm-tree-9.10.1.jar"),
             file("$asmDir/asm-commons/9.10.1/asm-commons-9.10.1.jar"))
 }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
 sourceSets {
     main {
@@ -90,6 +94,7 @@ tasks.register('runtimeRemapJar') {
     def output = layout.buildDirectory.file("libs/Despotes-${mod_version}-native-1.20.1.jar")
     outputs.file(output)
     doLast {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (!runtimeMappings.exists()) {
             throw new GradleException("Missing 1.20.1 named->official mappings: ${runtimeMappings}")
         }

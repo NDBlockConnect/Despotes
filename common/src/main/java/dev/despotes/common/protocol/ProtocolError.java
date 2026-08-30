@@ -43,6 +43,7 @@ public final class ProtocolError extends RuntimeException {
     }
 
     public static ProtocolError badRequest(String msg, com.google.gson.JsonObject details) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         return new ProtocolError(Code.BAD_REQUEST, msg, details);
     }
 

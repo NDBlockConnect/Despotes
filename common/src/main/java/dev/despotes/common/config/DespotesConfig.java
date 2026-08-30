@@ -43,6 +43,7 @@ public final class DespotesConfig {
     public final Movement movement = new Movement();
     // focus
     public final Focus focus = new Focus();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     // ai
     public final Ai ai = new Ai();
     // window
@@ -88,6 +89,7 @@ public final class DespotesConfig {
         public boolean requireToken = false;
         public String token = "";
         public final List<String> allowSources = new ArrayList<>();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         /** API keys (Alpha.6). When non-empty, every request must carry one (X-Despotes-Key). */
         public final List<String> apiKeys = new ArrayList<>();
     }
@@ -135,6 +137,7 @@ public final class DespotesConfig {
          * never steals OS focus while you work in another app.
          */
         public boolean keepReleasedWhileUnfocused = true;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         /** If the game steals OS focus right after the user left, return it to the user. */
         public boolean returnFocusOnSteal = true;
     }
@@ -180,6 +183,7 @@ public final class DespotesConfig {
     }
 
     public void save(Path path, IGamePlatform platform) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         try {
             Files.writeString(path, GSON.toJson(toJson()), StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -225,6 +229,7 @@ public final class DespotesConfig {
         this.movement.defaultLookSmoothTicks = o.movement.defaultLookSmoothTicks;
         this.movement.lookSmoothMs = o.movement.lookSmoothMs;
         this.window.grabFocusOnStart = o.window.grabFocusOnStart;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         this.focus.keepReleasedWhileUnfocused = o.focus.keepReleasedWhileUnfocused;
         this.focus.returnFocusOnSteal = o.focus.returnFocusOnSteal;
         this.ai.enabled = o.ai.enabled;
@@ -270,6 +275,7 @@ public final class DespotesConfig {
             for (JsonElement e : root.getAsJsonArray("sources")) {
                 if (!e.isJsonObject()) {
                     continue;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 }
                 JsonObject so = e.getAsJsonObject();
                 SourceEntry s = new SourceEntry();
@@ -315,6 +321,7 @@ public final class DespotesConfig {
             visualization.opLogFile = str(o, "opLogFile", visualization.opLogFile);
         }
         if (root.has("movement") && (o = root.getAsJsonObject("movement")) != null) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             movement.defaultLookSmoothTicks = integer(o, "defaultLookSmoothTicks", movement.defaultLookSmoothTicks);
             movement.lookSmoothMs = integer(o, "lookSmoothMs", movement.lookSmoothMs);
         }
@@ -360,6 +367,7 @@ public final class DespotesConfig {
         h.addProperty("host", http.host);
         h.addProperty("port", http.port);
         h.addProperty("maxWorkers", http.maxWorkers);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         h.addProperty("screenshotTimeoutMs", http.screenshotTimeoutMs);
         h.addProperty("oplogLimit", http.oplogLimit);
         root.add("http", h);
@@ -405,6 +413,7 @@ public final class DespotesConfig {
         cap.addProperty("maxWidth", capture.maxWidth);
         root.add("capture", cap);
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         JsonObject v = new JsonObject();
         v.addProperty("overlay", visualization.overlay);
         v.addProperty("overlayLines", visualization.overlayLines);
@@ -450,6 +459,7 @@ public final class DespotesConfig {
 
     private static double dbl(JsonObject o, String k, double def) {
         return o.has(k) && o.get(k).isJsonPrimitive() ? o.get(k).getAsDouble() : def;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     private static String str(JsonObject o, String k, String def) {

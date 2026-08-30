@@ -43,6 +43,7 @@ public final class Actions {
                 return doLook(ctx, cmd);
             case "function":
                 return doFunction(ctx, cmd);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             case "click":
                 return doClick(ctx, cmd);
             case "use":
@@ -88,6 +89,7 @@ public final class Actions {
                 return Result.ok(ctx.despotes().platform().probeScoreboard());
             case "coords":
                 return Result.ok(ctx.despotes().platform().probeCoords());
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             case "whisper":
                 return doWhisper(ctx, cmd);
             case "goto":
@@ -133,6 +135,7 @@ public final class Actions {
                 return doPing(ctx);
             case "ai":
                 return doAi(ctx, cmd);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             case "pending":
                 return doPending(ctx);
             case "config-reload":
@@ -178,6 +181,7 @@ public final class Actions {
                 if (press) {
                     p.injectKey(keyName, true);
                 }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 if (op.equals("tap")) {
                     ctx.despotes().dispatcher().scheduleInTicks(holdTicks,
                             () -> p.injectKey(keyName, false));
@@ -224,6 +228,7 @@ public final class Actions {
                         p.injectKey("key.keyboard.enter", true);
                         ctx.despotes().dispatcher().scheduleInTicks(2,
                                 () -> p.injectKey("key.keyboard.enter", false));
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                     }
                 }
                 break;
@@ -269,6 +274,7 @@ public final class Actions {
             if (text.startsWith("/")) {
                 p.sendCommand(text);
                 JsonObject res = new JsonObject();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 res.addProperty("executed", "chat");
                 res.addProperty("via", "command");
                 res.addProperty("chars", text.length());
@@ -314,6 +320,7 @@ public final class Actions {
         boolean sprint = Json.getBool(cmd, "sprint", false);
         int duration = Math.max(0, Json.getInt(cmd, "durationTicks", 1));
 
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         p.setMovement(forward, left, jump, sneak, sprint);
         if (duration > 0) {
             ctx.despotes().dispatcher().scheduleInTicks(duration,
@@ -359,6 +366,7 @@ public final class Actions {
             double tz;
             String uuid = Json.getStr(cmd, "uuid", "");
             if (!uuid.isBlank()) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 JsonObject found = p.findEntity(uuid);
                 if (!Json.getBool(found, "found", false)) {
                     throw ProtocolError.badRequest("entity not found or not loaded: " + uuid);
@@ -409,6 +417,7 @@ public final class Actions {
      * tells a caller both that the transport is alive and that the game loop is ticking.
      */
     private static Result doPing(ActionContext ctx) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         JsonObject res = new JsonObject();
         res.addProperty("executed", "pong");
         res.addProperty("tickCount", ctx.despotes().dispatcher().tickCount());
@@ -454,6 +463,7 @@ public final class Actions {
             throw ProtocolError.internal("AI endpoint failed: " + e.getMessage());
         }
         com.google.gson.JsonElement parsed;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         try {
             parsed = com.google.gson.JsonParser.parseString(plan.trim());
         } catch (Exception e) {
@@ -509,6 +519,7 @@ public final class Actions {
      * player inventory, or a screen must be open with the menu active).
      */
     private static Result doInventoryAction(ActionContext ctx, JsonObject cmd) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         IGamePlatform p = ctx.despotes().platform();
         ctx.requireInGame();
         String op = Json.normalize(Json.getStr(cmd, "op", "quickMove"));
@@ -554,6 +565,7 @@ public final class Actions {
                 boolean ok = p.slotClick(slot, button, "throw", 0);
                 JsonObject res = new JsonObject();
                 res.addProperty("executed", "inventory-action");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 res.addProperty("op", "drop");
                 res.addProperty("slot", slot);
                 res.addProperty("stack", Json.getBool(cmd, "stack", false));
@@ -599,6 +611,7 @@ public final class Actions {
                 boolean ok = p.slotClick(slot, button, "pickup", 0);
                 JsonObject res = new JsonObject();
                 res.addProperty("executed", "inventory-action");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 res.addProperty("op", "pickup");
                 res.addProperty("slot", slot);
                 res.addProperty("button", button);
@@ -644,6 +657,7 @@ public final class Actions {
 
         switch (mode) {
             case "recipe": {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 JsonObject grid = Json.getObj(cmd, "grid");
                 if (grid == null || grid.size() == 0) {
                     throw ProtocolError.badRequest("craft recipe mode requires 'grid' (slot→sourceSlot map)");
@@ -689,6 +703,7 @@ public final class Actions {
                 // Same as result mode — recipe book has filled the grid
                 boolean extracted = p.slotClick(0, 0, "quick_move", 0);
                 JsonObject res = new JsonObject();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 res.addProperty("executed", "craft");
                 res.addProperty("mode", "autocraft");
                 res.addProperty("extracted", extracted);
@@ -734,6 +749,7 @@ public final class Actions {
         res.addProperty("y", y);
         res.addProperty("z", z);
         return Result.ok(res);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 
     /**
@@ -779,6 +795,7 @@ public final class Actions {
     private static Result doFill(ActionContext ctx, JsonObject cmd) {
         IGamePlatform p = ctx.despotes().platform();
         ctx.requireInGame();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         int x1 = Json.getInt(cmd, "x1", 0);
         int y1 = Json.getInt(cmd, "y1", 0);
         int z1 = Json.getInt(cmd, "z1", 0);
@@ -824,6 +841,7 @@ public final class Actions {
                 double dy = ty - eyeY;
                 double dz = tz - player.z();
                 double horizontal = Math.sqrt(dx * dx + dz * dz);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
                 float pitch = Math.max(-89.9f, Math.min(89.9f,
                         (float) -Math.toDegrees(Math.atan2(dy, horizontal))));
@@ -869,6 +887,7 @@ public final class Actions {
             }
         }
         JsonObject res = new JsonObject();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         res.addProperty("executed", "retreat");
         res.addProperty("threatCount", threats.has("count") ? threats.get("count").getAsInt() : 0);
         return Result.ok(res);
@@ -914,6 +933,7 @@ public final class Actions {
             double y = Json.getDouble(cmd, "y", 0);
             double z = Json.getDouble(cmd, "z", 0);
             ok = ctx.despotes().navigator().gotoCoords(x, y, z, stopDist);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         }
         JsonObject res = new JsonObject();
         res.addProperty("executed", "goto");
@@ -959,6 +979,7 @@ public final class Actions {
         }
         p.sendCommand("/msg " + target + " " + message);
         JsonObject res = new JsonObject();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         res.addProperty("executed", "whisper");
         res.addProperty("target", target);
         res.addProperty("chars", message.length());
@@ -1004,6 +1025,7 @@ public final class Actions {
                             java.lang.reflect.Field merchantField = null;
                             Class<?> cls = menu.getClass();
                             while (cls != null && merchantField == null) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                                 try {
                                     merchantField = cls.getDeclaredField("merchant");
                                     merchantField.setAccessible(true);
@@ -1049,6 +1071,7 @@ public final class Actions {
                 return Result.ok(res);
             }
             case "execute": {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 int index = Json.getInt(cmd, "index", 0);
                 // Select the trade by index, then click the result slot (slot 2 in MerchantMenu)
                 // In MerchantMenu, slot 2 is the result slot
@@ -1094,6 +1117,7 @@ public final class Actions {
         ctx.requireInGame();
         // Quick-move (shift-click) each main inventory slot (9-35 in player inventory)
         int count = 0;
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         for (int slot = 9; slot <= 35; slot++) {
             if (p.slotClick(slot, 0, "quick_move", 0)) {
                 count++;
@@ -1139,6 +1163,7 @@ public final class Actions {
                 // Look at the block coordinates first, then use item
                 int x = Json.getInt(cmd, "x", 0);
                 int y = Json.getInt(cmd, "y", 0);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 int z = Json.getInt(cmd, "z", 0);
                 // Use look action to face the block
                 var player = p.player();
@@ -1185,6 +1210,7 @@ public final class Actions {
                         float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
                         float pitch = Math.max(-89.9f, Math.min(89.9f,
                                 (float) -Math.toDegrees(Math.atan2(dy, horizontal))));
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                         ctx.despotes().lookSmoother().start(yaw, pitch, 0);
                     }
                 }
@@ -1231,6 +1257,7 @@ public final class Actions {
         if (op.equals("unequip")) {
             // Pickup from armor slot, then place at a main inventory slot (9 is first main slot)
             p.slotClick(armorSlot, 0, "pickup", 0);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             p.slotClick(9, 0, "pickup", 0);
             JsonObject res = new JsonObject();
             res.addProperty("executed", "equip");
@@ -1276,6 +1303,7 @@ public final class Actions {
         }
         if (!player.dead()) {
             throw ProtocolError.badRequest("player is not dead; respawn only applies when dead");
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         }
         boolean sent = p.respawn();
         JsonObject res = new JsonObject();
@@ -1321,6 +1349,7 @@ public final class Actions {
     private static Result doClick(ActionContext ctx, JsonObject cmd) {
         IGamePlatform p = ctx.despotes().platform();
         if (p.screen() == null || !p.screen().open()) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             // No GUI open: fall back to world interaction via crosshair (requires a world).
             ctx.requireInGame();
             int button = Json.getInt(cmd, "button", 0);
@@ -1366,6 +1395,7 @@ public final class Actions {
         res.addProperty("executed", "click");
         res.addProperty("x", x);
         res.addProperty("y", y);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         res.addProperty("button", button);
         res.addProperty("op", op);
         return Result.ok(res);
@@ -1411,6 +1441,7 @@ public final class Actions {
         res.addProperty("what", what);
         return Result.ok(res);
     }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
     // ---- mouse capture ----
 
@@ -1456,6 +1487,7 @@ public final class Actions {
 
         p.beginCapture(opts, shot -> {
             if (!settled.compareAndSet(false, true)) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 return;
             }
             if (shot == null) {
@@ -1501,6 +1533,7 @@ public final class Actions {
                     + safeId(ctx.requestId()) + "." + shot.format();
             java.nio.file.Path file = dir.resolve(name);
             java.nio.file.Files.write(file, shot.encoded());
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             res.addProperty("path", file.toAbsolutePath().toString());
         } else {
             res.addProperty("base64", Base64.getEncoder().encodeToString(shot.encoded()));
@@ -1546,6 +1579,7 @@ public final class Actions {
         IGamePlatform p = ctx.despotes().platform();
         JsonObject res = new JsonObject();
         var screen = p.screen();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         if (screen == null || !screen.open()) {
             res.addProperty("open", false);
             return Result.ok(res);
@@ -1592,6 +1626,7 @@ public final class Actions {
         } else {
             // Fall back to crosshair target
             JsonObject target = p.probeTarget();
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             if (!target.has("x")) {
                 throw ProtocolError.badRequest("redstone requires 'x'/'y'/'z' or a crosshair block target");
             }
@@ -1645,6 +1680,7 @@ public final class Actions {
      * standard useItemOn pipeline, so it works across all loader lines.
      */
     private static Result doRedstoneAction(ActionContext ctx, JsonObject cmd) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         IGamePlatform p = ctx.despotes().platform();
         ctx.requireInGame();
         String op = Json.normalize(Json.getStr(cmd, "op", "toggle"));
@@ -1690,6 +1726,7 @@ public final class Actions {
         String op = Json.normalize(Json.getStr(cmd, "op", "status"));
         switch (op) {
             case "add": {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 String name = Json.getStr(cmd, "name", "");
                 if (name.isBlank()) throw ProtocolError.badRequest("'name' is required");
                 int period = Json.getInt(cmd, "periodTicks", 20);
@@ -1744,6 +1781,7 @@ public final class Actions {
      * {"type":"macro","op":"status"}
      */
     private static Result doMacro(ActionContext ctx, JsonObject cmd) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         var mgr = ctx.despotes().macroRecorder();
         String op = Json.normalize(Json.getStr(cmd, "op", "status"));
         switch (op) {
@@ -1789,6 +1827,7 @@ public final class Actions {
                 return Result.ok(res);
             }
             case "stop": {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 mgr.stopPlayback();
                 JsonObject res = new JsonObject();
                 res.addProperty("executed", "macro");
@@ -1834,6 +1873,7 @@ public final class Actions {
         try {
             queryResult = execute(ctx, queryParams);
         } catch (Throwable t) {
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
             throw ProtocolError.internal("condition query failed: " + t.getMessage());
         }
         JsonObject state = com.google.gson.JsonParser.parseString(
@@ -1879,6 +1919,7 @@ public final class Actions {
             case "gt":
             case "lt": {
                 if (fieldValue == null || !fieldValue.isJsonPrimitive()) { matched = false; break; }
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 double actual = fieldValue.getAsDouble();
                 double expected = Json.getDouble(cmd, "value", 0);
                 matched = op.equals("gt") ? actual > expected : actual < expected;
@@ -1924,5 +1965,6 @@ public final class Actions {
         res.addProperty("actionsRun", executedCount);
         res.add("results", results);
         return Result.ok(res);
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
     }
 }

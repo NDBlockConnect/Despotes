@@ -1,6 +1,6 @@
 # Despotes FACT 鈥?Project State and Roadmap
 
-> Last updated: 2026-08-16 | Current release: v26.2 stable
+> Last updated: 2026-08-31 | Current release: v26.12-Alpha.2 (Pre-Release) | Last stable: v26.11
 
 ## Current State
 
@@ -19,29 +19,29 @@
 - **v26.10** stable: 20/20 artifacts (neoforge-26.1.2 + neoforge-1.21.10 completed)
 - **v26.11-Alpha.1** redstone circuit completion (circuit query, redstone-action) + fabric-26.1.2 hardening
 - **v26.11** stable: window geometry block (coord conversion), chat title-screen guard, aprism manifest fix, neoforge-1.21.1 classpath fix
+- **v26.12-Alpha.1/Alpha.2**: batch control flow (wait/condition/retry), structured error.details, 1.20.1 support across Fabric/Forge/Native (Native via TinyRemapper named→official runtime remap), BC compliance pass (watermarks, version stamps, artifact naming)
 
 ### Version scheme
-Per BC skill spec: `v{Year}.{Major}-Alpha{N}` 鈥?Major range 0-鈭? valid through 2026-12-31 for v26. Each major: Alpha.1-9 (Pre-Release), then bare version (Release).
+Per BC skill spec: `v{Year}.{Major}-Alpha.{N}` — Major range 0-∞ valid through 2026-12-31 for v26. Each major: Alpha.1-9 (Pre-Release), then bare version (Release).
 
 ### Branch model
-- `main` 鈥?docs/spec only
-- `native` 鈥?primary dev line (premain javaagent + Mixin + ASM)
-- `fabric` / `neoforge` / `forge` / `aprism` 鈥?loader branches, ff-merged from native
+- `main` — docs/spec only
+- `native` — primary dev line (premain javaagent + Mixin + ASM)
+- `fabric` / `neoforge` / `forge` / `aprism` — loader branches, ff-merged from native
 
-### Build matrix (20 artifacts planned; 18 in v26.10-Alpha.1)
-- **v26.10** stable: 20/20 artifacts (neoforge-26.1.2 + neoforge-1.21.10 completed)
-- **v26.11-Alpha.1** redstone circuit completion (circuit query, redstone-action) + fabric-26.1.2 hardening
-- **v26.11** stable: window geometry block (coord conversion), chat title-screen guard, aprism manifest fix, neoforge-1.21.1 classpath fix
+### Build matrix (20 artifacts)
 | Loader | MC versions | JDK |
 |---|---|---|
-| native | 1.20.1, 1.21.1, 1.21.4, **1.21.10**, **26.1.2**, 26.2 | 25 (26.x), 21 (1.21.x), 17 (1.20.x) |
-| fabric | 1.20.1, 1.21.1, 1.21.4, **1.21.10**, **26.1.2**, 26.2 | same |
-| neoforge | 1.21.1, 1.21.4, 26.2 (+ 1.21.10 / 26.1.2 pending NeoForm) | same |
+| native | 1.20.1, 1.21.1, 1.21.4, 1.21.10, 26.1.2, 26.2 | 25 (26.x), 21 (1.21.x), 17 (1.20.x) |
+| fabric | 1.20.1, 1.21.1, 1.21.4, 1.21.10, 26.1.2, 26.2 | same |
+| neoforge | 1.21.1, 1.21.4, 1.21.10, 26.1.2, 26.2 | same |
 | forge | 1.20.1, 1.21.1 | same |
 | aprism | 26.2 | 25 |
 
 ### Implemented actions
 key, type, chat, move, look (delta/absolute/lookat), function, click, use (attack/useItem/placeBlock/drop/pickBlock), mouse, screenshot, status, screen, inventory, self, threats, world, blocks, entities, target, container, hotbar, respawn, ping, ai, pending, config-reload
+
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
 ### Implemented queries
 status (incl. lifecycle/latency), screen (incl. kind:death), inventory, self (30+ vitals), threats (hostile+projectile, targetingYou), world (biome/time/difficulty/isDay), blocks, entities, target, container, pending
@@ -87,6 +87,8 @@ mdl game status <instance>
 - Forge 1.20.1: clean Java 17 build passed; existing MDL instance exits at ModLauncher with LoadLibrary runtime_path not defined before Despotes loads. This is an MDL/instance runtime layout issue, not a mod failure.
 - Native 1.20.1: previous agent was build-only (transformer targeted named 
 et/minecraft/client/Minecraft, while vanilla runtime is obfuscated enn). Fixed with a TinyRemapper named-to-official packaging task plus official transformer targets (enn.s() / ex.a). Runtime validation: transformer hit and reported Minecraft transform OK, native core booted, HTTP 25599 came up, tick hook activated, ping/screen passed.
+
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
 ### Known issues
 
@@ -142,6 +144,8 @@ et/minecraft/client/Minecraft, while vanilla runtime is obfuscated enn). Fixed w
 - A7: coords query (spawn, world border, key locations)
 - A8: AFK guard (auto-respond config.afkGuard)
 - A9: RC full regression
+
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
 ### v26.5 鈥?Pathfinding and Navigation
 - A1-A9: A* pathfinding, follow entity, avoid threats, walkable/climbable/hazard tags, jump/fall/swim, goto composite, nav events, waypoints
