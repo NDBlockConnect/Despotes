@@ -20,8 +20,10 @@ base {
 
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
-    compileOnly files("C:/Users/Sails/AppData/Local/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-client.jar")
-    compileOnly files("C:/Users/Sails/AppData/Local/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-universal.jar")
+    compileOnly files("${System.getenv('LOCALAPPDATA')}/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-client.jar")
+    compileOnly files("${System.getenv('LOCALAPPDATA')}/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-universal.jar")
+    compileOnly files("/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-client.jar")
+    compileOnly files("/mdl/libraries/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-universal.jar")
     compileOnly "com.google.code.gson:gson:2.11.0"
 }
 

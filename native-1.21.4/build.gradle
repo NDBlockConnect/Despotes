@@ -13,9 +13,9 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
-def root = file("C:/Users/Sails/Documents/Workspace/01-Active/Domain-Projects/Minecraft/Despotes")
+def root = file('..')
 def mcClient = file("${root}/fabric-1.21.4/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-d1fae903ae/1.21.4-loom.mappings.1_21_4.layered+hash.2198-v2/minecraft-merged-d1fae903ae-1.21.4-loom.mappings.1_21_4.layered+hash.2198-v2.jar")
-def asmDir = file("C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm")
+def asmDir = file("${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm")
 
 dependencies {
     compileOnly files(mcClient)

@@ -7,10 +7,10 @@ buildscript {
         classpath 'net.fabricmc:tiny-remapper:0.12.3'
         classpath 'net.fabricmc:mapping-io:0.7.1'
         classpath files(
-                'C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm/asm/9.10.1/asm-9.10.1.jar',
-                'C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm/asm-analysis/9.10.1/asm-analysis-9.10.1.jar',
-                'C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm/asm-commons/9.10.1/asm-commons-9.10.1.jar',
-                'C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm/asm-tree/9.10.1/asm-tree-9.10.1.jar')
+                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm/9.10.1/asm-9.10.1.jar",
+                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm-analysis/9.10.1/asm-analysis-9.10.1.jar",
+                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm-commons/9.10.1/asm-commons-9.10.1.jar",
+                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm-tree/9.10.1/asm-tree-9.10.1.jar")
     }
 }
 
@@ -29,17 +29,17 @@ base {
 // (a forked JDK 17 compiler daemon dies on this memory-constrained host).
 
 // Official-named 1.20.1 client jar produced by the Fabric Loom cache.
-def mcClient = file("C:/Users/Sails/Documents/Workspace/01-Active/Domain-Projects/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-b7a764897f/1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2/minecraft-merged-b7a764897f-1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2.jar")
-def runtimeMappings = file("C:/Users/Sails/Documents/Workspace/01-Active/Domain-Projects/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/source_mappings/b7a764897fc51a213260536f455b3ec626f2d83c.tiny")
-def asmDir = file("C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm")
+def mcClient = file("../fabric-1.20.1/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-b7a764897f/1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2/minecraft-merged-b7a764897f-1.20.1-loom.mappings.1_20_1.layered+hash.2198-v2.jar")
+def runtimeMappings = file("../fabric-1.20.1/.gradle/loom-cache/source_mappings/b7a764897fc51a213260536f455b3ec626f2d83c.tiny")
+def asmDir = file("${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm")
 
 dependencies {
     compileOnly files(mcClient)
-    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
+    compileOnly fileTree(dir: "${System.getenv('LOCALAPPDATA')}/mdl/libraries", include: "**/*.jar")
     compileOnly "com.google.code.gson:gson:2.11.0"
     compileOnly "org.jetbrains:annotations:24.0.1"
     compileOnly "org.lwjgl:lwjgl-glfw:3.3.3"
-    compileOnly fileTree(dir: "C:/Users/Sails/Documents/Workspace/01-Active/Domain-Projects/Minecraft/Despotes/fabric-1.20.1/.gradle/loom-cache/remapped_mods/loom_mappings_1_20_1_layered_hash_2198_v2", include: "**/*.jar")
+    compileOnly fileTree(dir: "../fabric-1.20.1/.gradle/loom-cache/remapped_mods/loom_mappings_1_20_1_layered_hash_2198_v2", include: "**/*.jar")
     // v26.2-Alpha.3: ASM for dynamic instrumentation, embedded into the agent jar.
     implementation files(
             file("$asmDir/asm/9.10.1/asm-9.10.1.jar"),
