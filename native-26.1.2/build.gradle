@@ -15,14 +15,14 @@ java {
 
 // Compile against the official-named vanilla 26.2 client jar (Mojang unobfuscated from
 // 26.1 onward). Gson ships with the Minecraft client, so it is compileOnly here too.
-def mcClient = file("C:/Users/Sails/AppData/Local/mdl/versions/26.1.2/26.1.2.jar")
-def asmDir = file("C:/Users/Sails/AppData/Local/mdl/libraries/org/ow2/asm")
+def mcClient = file("${System.getenv('LOCALAPPDATA')}/mdl/versions/26.1.2/26.1.2.jar")
+def asmDir = file("${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm")
 
 dependencies {
     compileOnly files(mcClient)
     // Full vanilla dependency set (fastutil/guava/joml/slf4j/...): javac must resolve every
     // type referenced by MC signatures.
-    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
+    compileOnly fileTree(dir: "${System.getenv('LOCALAPPDATA')}/mdl/libraries", include: "**/*.jar")
     compileOnly "com.google.code.gson:gson:2.11.0"
 
     // v26.2-Alpha.3: ASM for dynamic instrumentation. Implementation so the transformer

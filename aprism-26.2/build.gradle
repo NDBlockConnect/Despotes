@@ -14,13 +14,13 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
-def mcClient = file("C:/Users/Sails/AppData/Local/mdl/versions/26.2/26.2.jar")
-def aprismApi = file("C:/Users/Sails/AppData/Roaming/mdl/aprism/Aprism-v26.4-JE-26.2.jar")
+def mcClient = file("${System.getenv('LOCALAPPDATA')}/mdl/versions/26.2/26.2.jar")
+def aprismApi = file("${System.getenv('APPDATA')}/mdl/aprism/Aprism-v26.4-JE-26.2.jar")
 
 dependencies {
     compileOnly files(mcClient)
     compileOnly files(aprismApi)
-    compileOnly fileTree(dir: "C:/Users/Sails/AppData/Local/mdl/libraries", include: "**/*.jar")
+    compileOnly fileTree(dir: "${System.getenv('LOCALAPPDATA')}/mdl/libraries", include: "**/*.jar")
     compileOnly "com.google.code.gson:gson:2.11.0"
 }
 

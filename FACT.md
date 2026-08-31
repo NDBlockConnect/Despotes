@@ -92,8 +92,8 @@ et/minecraft/client/Minecraft, while vanilla runtime is obfuscated enn). Fixed w
 
 ### Known issues
 
-- Root gradle.properties still at v26.0-Alpha.2 (cosmetic; subprojects override)
-- JDK path in root gradle.properties points to old workspace dir (subprojects carry their own)
+- ~~Root gradle.properties still at v26.0-Alpha.2~~ RESOLVED (v26.12-Alpha.2 compliance pass: stamp aligned, stale JDK paths moved to machine-global `~/.gradle/gradle.properties`)
+- neoforge-1.21.1 config-time NG bug: with pre-seeded `net.neoforged`/`net.minecraftforge` tooling artifacts present in `~/.m2` (MavenLocal), NeoGradle 7.1.38's CommonProjectPlugin can hit "Cannot mutate content repository descriptor MavenLocal after repository has been used" during configuration. Artifact v26.12-Alpha.2 shipped from the clean pre-incident build (04:02 local, post-watermark sources). Workaround for rebuilds: run the full `build` once (not repeated interrupted `jar` runs), or temporarily move `~/.m2/repository/net/neoforged` aside so MavenLocal records misses instead of hits.
 - v26.2 14-artifact full runtime verification never completed
 - MDL instances have older mod versions installed
 - neoforge-1.21.10: needs the Vineflower decompile-failure patch hook (added in its build.gradle: neoFormTransformSource doLast rewrites the illegal `$VF: Couldn't be decompiled` lambda in EntitySectionStorage.java:120); recompile passes after patch. Legacy NeoForge 21.1.248 jars must NOT be on its compile classpath (they shadow 21.10 classes). Artifact built and shipped.
