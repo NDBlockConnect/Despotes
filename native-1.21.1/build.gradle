@@ -26,9 +26,9 @@ dependencies {
     compileOnly "com.google.code.findbugs:jsr305:3.0.2"
     // v26.2-Alpha.3: ASM for dynamic instrumentation, embedded into the agent jar.
     implementation files(
-            file("$asmDir/asm/9.10.1/asm-9.10.1.jar"),
-            file("$asmDir/asm-tree/9.10.1/asm-tree-9.10.1.jar"),
-            file("$asmDir/asm-commons/9.10.1/asm-commons-9.10.1.jar"))
+            file("$asmDir/asm/9.9/asm-9.9.jar"),
+            file("$asmDir/asm-tree/9.9/asm-tree-9.9.jar"),
+            file("$asmDir/asm-commons/9.9/asm-commons-9.9.jar"))
 }
 
 sourceSets {

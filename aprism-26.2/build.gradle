@@ -15,7 +15,7 @@ java {
 }
 
 def mcClient = file("${System.getenv('LOCALAPPDATA')}/mdl/versions/26.2/26.2.jar")
-def aprismApi = file("${System.getenv('APPDATA')}/mdl/aprism/Aprism-v26.4-JE-26.2.jar")
+def aprismApi = file("${System.getenv('APPDATA')}/mdl/aprism/Aprism-v26.8-JE-26.2.jar")
 
 dependencies {
     compileOnly files(mcClient)
