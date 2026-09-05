@@ -7,10 +7,10 @@ buildscript {
         classpath 'net.fabricmc:tiny-remapper:0.12.3'
         classpath 'net.fabricmc:mapping-io:0.7.1'
         classpath files(
-                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm/9.10.1/asm-9.10.1.jar",
-                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm-analysis/9.10.1/asm-analysis-9.10.1.jar",
-                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm-commons/9.10.1/asm-commons-9.10.1.jar",
-                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm-tree/9.10.1/asm-tree-9.10.1.jar")
+                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm/9.9/asm-9.9.jar",
+                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm-analysis/9.9/asm-analysis-9.9.jar",
+                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm-commons/9.9/asm-commons-9.9.jar",
+                "${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm/asm-tree/9.9/asm-tree-9.9.jar")
     }
 }
 
@@ -42,9 +42,9 @@ dependencies {
     compileOnly fileTree(dir: "../fabric-1.20.1/.gradle/loom-cache/remapped_mods/loom_mappings_1_20_1_layered_hash_2198_v2", include: "**/*.jar")
     // v26.2-Alpha.3: ASM for dynamic instrumentation, embedded into the agent jar.
     implementation files(
-            file("$asmDir/asm/9.10.1/asm-9.10.1.jar"),
-            file("$asmDir/asm-tree/9.10.1/asm-tree-9.10.1.jar"),
-            file("$asmDir/asm-commons/9.10.1/asm-commons-9.10.1.jar"))
+            file("$asmDir/asm/9.9/asm-9.9.jar"),
+            file("$asmDir/asm-tree/9.9/asm-tree-9.9.jar"),
+            file("$asmDir/asm-commons/9.9/asm-commons-9.9.jar"))
 }
 //GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
