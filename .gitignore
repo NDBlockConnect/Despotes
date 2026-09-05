@@ -1,5 +1,6 @@
 # Gradle
 .gradle/
+.gradle-hermetic/
 build/
 out/
 !gradle/wrapper/gradle-wrapper.jar
