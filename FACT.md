@@ -22,6 +22,7 @@
 - **v26.12-Alpha.1/Alpha.2**: batch control flow (wait/condition/retry), structured error.details, 1.20.1 support across Fabric/Forge/Native (Native via TinyRemapper named→official runtime remap), BC compliance pass (watermarks, version stamps, artifact naming)
 - **v26.12-Alpha.3**: fabric-26.1.2 event-stream verified working in-world (prior "silent mixin" was a test-methodology artifact — no code change needed); build de-machining (env-var MDL paths, relative loom-cache paths, JDK hints to machine-global config); neoforge-1.21.4/1.21.10 settings.gradle rootProject.name fix; hermetic GRADLE_USER_HOME workaround documented for NG config bug
 - **v26.12-Alpha.4**: Aprism Loader v26.8 adaptation — aprism-26.2 compiles against `Aprism-v26.8-JE-26.2.jar` (com.aprism.api.* unchanged, pure superset; loader adds OfficialMappings + bundled MixinExtras/ASM 9.9); .aje runtime-verified on a vanilla-host 26.2 instance under the v26.8 agent (`performLoad complete`, `DespotesAprismMod onInitialize`, HTTP/WS up, boot line confirmed)
+- **v26.12-Alpha.5**: Aprism manifest dependency floor aligned to the adapted loader (`aprism: >=26.8`, previously `>=26.0-Alpha.1` — the stale floor would have let pre-v26.8 loaders attempt to load a v26.8-compiled artifact); `.aje` manifest re-audited (version/id/entrypoint/minecraft+java ranges); 20/20 artifacts + .aje rebuilt on the Alpha.5 stamp
 
 ### Version scheme
 Per BC skill spec: `v{Year}.{Major}-Alpha.{N}` — Major range 0-∞ valid through 2026-12-31 for v26. Each major: Alpha.1-9 (Pre-Release), then bare version (Release).
