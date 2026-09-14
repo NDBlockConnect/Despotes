@@ -15,6 +15,11 @@ java {
 
 // Compile against the official-named vanilla 26.2 client jar (Mojang unobfuscated from
 // 26.1 onward). Gson ships with the Minecraft client, so it is compileOnly here too.
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
 def mcClient = file("${System.getenv('LOCALAPPDATA')}/mdl/versions/26.2/26.2.jar")
 def asmDir = file("${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm")
 

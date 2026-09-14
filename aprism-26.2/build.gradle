@@ -17,6 +17,15 @@ java {
 def mcClient = file("${System.getenv('LOCALAPPDATA')}/mdl/versions/26.2/26.2.jar")
 def aprismApi = file("${System.getenv('APPDATA')}/mdl/aprism/Aprism-v26.8-JE-26.2.jar")
 
+// v26.12: declare repositories explicitly. This module previously had none, so the
+// only resolvable source was the machine-local ~/.m2 (mavenLocal), which made the
+// build fail whenever that cache was cleaned. mavenLocal stays first so mirrored
+// Aprism-ecosystem artifacts still win; mavenCentral is the fallback.
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
 dependencies {
     compileOnly files(mcClient)
     compileOnly files(aprismApi)

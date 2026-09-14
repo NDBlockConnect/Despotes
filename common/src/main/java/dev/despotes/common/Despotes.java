@@ -34,10 +34,12 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.12-Alpha.5";
+    public static final String VERSION = "v26.12";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
+
+    private volatile boolean stopped;
 
     private final IGamePlatform platform;
     private final DespotesConfig config;
@@ -91,6 +93,10 @@ public final class Despotes {
         }
 //GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         d.startTransports();
+        // v26.12: stop all transports on JVM shutdown — the JDK httpserver's internal
+        // dispatcher thread is non-daemon and otherwise blocks JVM exit, tripping the
+        // vanilla client shutdown watchdog (crash "Client shutdown from post-main").
+        Runtime.getRuntime().addShutdownHook(new Thread(d::shutdown, "Despotes-Shutdown"));
         platform.log("[Despotes] " + VERSION + " booted on loader '" + platform.loaderId()
                 + "' (MC " + platform.mcVersion() + "). Config: " + configPath);
         return d;
@@ -146,6 +152,12 @@ public final class Despotes {
     }
 
     public void shutdown() {
+        synchronized (this) {
+            if (stopped) {
+                return;
+            }
+            stopped = true;
+        }
         for (ControlTransport t : transports) {
             try {
                 t.stop();
