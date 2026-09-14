@@ -13,6 +13,12 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
+repositories {
+    maven { url = 'https://libraries.minecraft.net/' }
+    mavenLocal()
+    mavenCentral()
+}
+
 def mcClient = file("../fabric-1.21.1/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-f556725616/1.21.1-loom.mappings.1_21_1.layered+hash.2198-v2/minecraft-merged-f556725616-1.21.1-loom.mappings.1_21_1.layered+hash.2198-v2.jar")
 def asmDir = file("${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm")
 

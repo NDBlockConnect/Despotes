@@ -33,6 +33,13 @@ def mcClient = file("../fabric-1.20.1/.gradle/loom-cache/minecraftMaven/net/mine
 def runtimeMappings = file("../fabric-1.20.1/.gradle/loom-cache/source_mappings/b7a764897fc51a213260536f455b3ec626f2d83c.tiny")
 def asmDir = file("${System.getenv('LOCALAPPDATA')}/mdl/libraries/org/ow2/asm")
 
+// v26.12: declare repositories explicitly (previously relied on the machine-local~/.m2 only).
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url = 'https://libraries.minecraft.net/' }
+}
+
 dependencies {
     compileOnly files(mcClient)
     compileOnly fileTree(dir: "${System.getenv('LOCALAPPDATA')}/mdl/libraries", include: "**/*.jar")
