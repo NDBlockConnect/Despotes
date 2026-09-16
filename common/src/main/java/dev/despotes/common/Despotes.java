@@ -93,9 +93,15 @@ public final class Despotes {
         }
 //GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         d.startTransports();
-        // v26.12: stop all transports on JVM shutdown — the JDK httpserver's internal
-        // dispatcher thread is non-daemon and otherwise blocks JVM exit, tripping the
-        // vanilla client shutdown watchdog (crash "Client shutdown from post-main").
+        // v26.12: register the shutdown hook.
+        // NOTE (v26.13 investigation): this hook does NOT rescue the vanilla client
+        // shutdown watchdog. Runtime.addShutdownHook only runs once the JVM starts
+        // exiting, which requires every non-daemon thread to end first — and the JDK
+        // httpserver's internal "HTTP-Dispatcher" thread is non-daemon by construction.
+        // The JVM therefore never reaches the hook (verified: crash-report thread dumps
+        // carry "DestroyJavaVM" with no "Despotes-Shutdown" thread, and an isolated
+        // probe hangs both with and without the hook). The real fix is an application
+        // level stop before MC's post-main watchdog runs; tracked in FACT.md.
         Runtime.getRuntime().addShutdownHook(new Thread(d::shutdown, "Despotes-Shutdown"));
         platform.log("[Despotes] " + VERSION + " booted on loader '" + platform.loaderId()
                 + "' (MC " + platform.mcVersion() + "). Config: " + configPath);
