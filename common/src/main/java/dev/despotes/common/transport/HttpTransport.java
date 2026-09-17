@@ -22,6 +22,10 @@ public final class HttpTransport implements ControlTransport {
     private HttpServer server;
     private Despotes despotes;
     private SecurityGate gate;
+    /** v26.12.1: actual bound port, or -1 when binding never succeeded. */
+    private volatile int boundPort = -1;
+    /** v26.12.1: bind failure message (e.g. port owned by another instance), else null. */
+    private volatile String bindFailure;
 
     @Override
     public String id() {
@@ -53,10 +57,38 @@ public final class HttpTransport implements ControlTransport {
             server.createContext("/despotes/v1/assistant", this::handleAssistant);
             server.createContext("/despotes/v1/events", this::handleEvents);
             server.start();
-            despotes.platform().log("[Despotes] HTTP transport listening on " + host + ":" + port);
+            boundPort = port;
+            despotes.platform().log("[Despotes] HTTP transport listening on " + host + ":" + port
+                    + " (instance " + despotes.instanceId() + " '" + despotes.instanceName() + "')");
         } catch (IOException e) {
-            despotes.platform().log("[Despotes] HTTP transport failed to start: " + e.getMessage());
+            // v26.12.1: never fail silently. A port clash used to leave the instance with
+            // no HTTP channel while a *different* game owned the port, so callers talking
+            // to the configured address silently read another instance's state.
+            bindFailure = e.getMessage();
+            despotes.platform().log("[Despotes] HTTP transport FAILED to bind " + host + ":" + port
+                    + " (" + e.getMessage() + ") — another Despotes instance may already own this port. "
+                    + "This instance id=" + despotes.instanceId() + " name='" + despotes.instanceName()
+                    + "' has NO HTTP control channel; set a distinct control.http.port in despotes.json.");
         }
+    }
+
+    /**
+     * v26.12.1: port this transport actually bound, or {@code -1} when it never bound.
+     *
+     * @return the bound TCP port, or -1
+     */
+    public int boundPort() {
+        return boundPort;
+    }
+
+    /**
+     * v26.12.1: non-null when the HTTP listener failed to bind (typically a port clash
+     * with another instance), so callers can surface the misconfiguration.
+     *
+     * @return the bind error message, or {@code null} when binding succeeded
+     */
+    public String bindFailure() {
+        return bindFailure;
     }
 
     private static int resolvePort(int configured) {
