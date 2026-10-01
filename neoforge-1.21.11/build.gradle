@@ -1,0 +1,95 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.gradle.userdev' version '7.1.38'
+}
+
+// WAF note: some networks intermittently block the Java HTTP client against
+// maven.neoforged.net; mavenLocal is checked first so mirrored artifacts win.
+repositories {
+    mavenLocal()
+    maven { url = 'https://maven.neoforged.net/releases' }
+    mavenCentral()
+}
+
+version = mod_version + '-neoforge-1.21.11'
+group = mod_group_id
+
+base {
+    archivesName = 'Despotes'
+}
+
+dependencies {
+    implementation "net.neoforged:neoforge:${neo_version}"
+    compileOnly "com.google.code.gson:gson:2.11.0"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir file('../common/src/main/java')
+            srcDir file('src/main/java')
+        }
+    }
+}
+
+runs {
+    configureEach {
+        systemProperty 'forge.logging.console.level', 'debug'
+        workingDirectory project.layout.projectDirectory.dir('run').dir(name)
+        modSource project.sourceSets.main
+    }
+    client
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
+
+// NeoForm's Vineflower decompiler fails on EntitySectionStorage.getEntities in 1.21.10+,
+// emitting an illegal "// $VF: Couldn't be decompiled" lambda placeholder. Patch the
+// transformed source after every transformSource run (idempotent).
+tasks.matching { it.name == 'neoFormTransformSource' }.configureEach {
+    doLast {
+        def targets = fileTree(dir: layout.buildDirectory.dir('neoForm'), include: '**/steps/transformSource/transformed/net/minecraft/world/level/entity/EntitySectionStorage.java')
+        def broken = 'this.forEachAccessibleNonEmptySection(p_261843_, p_261463_ -> // $VF: Couldn\'t be decompiled);'
+        def fixed = 'this.forEachAccessibleNonEmptySection(p_261843_, p_261463_ -> p_261463_.getEntities(p_261630_, p_261843_, p_261742_));'
+        targets.each { f ->
+            def text = f.getText('UTF-8')
+            if (text.contains(broken)) {
+                f.setText(text.replace(broken, fixed), 'UTF-8')
+                logger.lifecycle('[Despotes] patched Vineflower decompile failure in ' + f.name)
+            }
+        }
+    }
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+tasks.withType(ProcessResources).configureEach {
+    def replaceProperties = [
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : version,
+            mod_semver             : mod_semver
+    ]
+    inputs.properties replaceProperties
+    filesMatching('META-INF/mods.toml') {
+        expand replaceProperties
+    }
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand replaceProperties
+    }
+}
+
+jar {
+    archiveVersion = mod_version + '-neoforge-1.21.11'
+}
+//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
+
