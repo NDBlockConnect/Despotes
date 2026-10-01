@@ -48,6 +48,13 @@ public final class ProtocolError extends RuntimeException {
     }
 
     public static ProtocolError unknownType(String type) {
+        if ("batch".equals(type)) {
+            // v26.13: batch control flow uses the {"batch":[...]} envelope, not
+            // {"type":"batch"} — surface the correct shape where callers will see it.
+            return new ProtocolError(Code.UNKNOWN_TYPE,
+                    "unknown command type: batch (batch runs use the {\"batch\":[...]} envelope, "
+                            + "not {\"type\":\"batch\"})");
+        }
         return new ProtocolError(Code.UNKNOWN_TYPE, "unknown command type: " + type);
     }
 
