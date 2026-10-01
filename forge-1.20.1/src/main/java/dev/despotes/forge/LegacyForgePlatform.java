@@ -76,8 +76,26 @@ public final class LegacyForgePlatform implements IGamePlatform {
         });
         try {
             return future.get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.ExecutionException e) {
+            // v26.13: propagate structured protocol errors (e.g. NOT_IN_GAME guards)
+            // instead of flattening them into a generic timeout.
+            if (e.getCause() instanceof dev.despotes.common.protocol.ProtocolError pe) {
+                throw pe;
+            }
+            return null;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    @Override
+    public boolean shutdownRequested() {
+        // v26.13: stop the transports while the game loop is still closing so the
+        // post-main watchdog never trips on the live HTTP dispatcher thread.
+        try {
+            return !Minecraft.getInstance().isRunning();
+        } catch (Throwable t) {
+            return false;
         }
     }
 

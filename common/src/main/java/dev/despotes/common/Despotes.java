@@ -34,7 +34,7 @@ import java.util.List;
 public final class Despotes {
 
     public static final String MOD_ID = "despotes";
-    public static final String VERSION = "v26.12.1";
+    public static final String VERSION = "v26.13-Alpha.1";
     public static final int PROTOCOL_VERSION = 1;
 
     private static volatile Despotes instance;
@@ -148,15 +148,12 @@ public final class Despotes {
         }
 //GitHub@NDBlockConnect | BlockConnect@StarsailsClover
         d.startTransports();
-        // v26.12: register the shutdown hook.
-        // NOTE (v26.13 investigation): this hook does NOT rescue the vanilla client
-        // shutdown watchdog. Runtime.addShutdownHook only runs once the JVM starts
-        // exiting, which requires every non-daemon thread to end first — and the JDK
-        // httpserver's internal "HTTP-Dispatcher" thread is non-daemon by construction.
-        // The JVM therefore never reaches the hook (verified: crash-report thread dumps
-        // carry "DestroyJavaVM" with no "Despotes-Shutdown" thread, and an isolated
-        // probe hangs both with and without the hook). The real fix is an application
-        // level stop before MC's post-main watchdog runs; tracked in FACT.md.
+        // v26.13: the tick hook polls shutdownRequested() and stops the transports while
+        // the game loop is still alive. Runtime.addShutdownHook alone cannot rescue the
+        // vanilla client shutdown watchdog: the JDK httpserver's non-daemon dispatcher
+        // thread keeps the JVM alive until MC's post-main watchdog kills it first, so the
+        // hook never runs (verified via thread dumps). The application-level stop is the
+        // viable fix; the hook stays as a last-resort safety net for external kills.
         Runtime.getRuntime().addShutdownHook(new Thread(d::shutdown, "Despotes-Shutdown"));
         platform.log("[Despotes] " + VERSION + " booted on loader '" + platform.loaderId()
                 + "' (MC " + platform.mcVersion() + "). Config: " + configPath);
@@ -197,6 +194,15 @@ public final class Despotes {
 
     /** Called once per client tick on the client thread. */
     public void clientTick() {
+        // v26.13: application-level stop. MC's post-main watchdog kills the JVM while the
+        // JDK httpserver's non-daemon dispatcher thread is still alive, and the shutdown
+        // hook never gets to run — so stop the transports here, while this tick is still
+        // executing inside the closing game loop.
+        if (!stopped && platform.shutdownRequested()) {
+            platform.log("[Despotes] client closing; stopping transports before the shutdown watchdog fires.");
+            shutdown();
+            return;
+        }
         focusManager.tick(config);
         lifeCycle.tick();
         navigator.tick();

@@ -36,10 +36,23 @@ public interface IGamePlatform {
 
     /**
      * Run a supplier on the client thread and block the calling thread until it returns,
-     * up to {@code timeoutMs}. Returns null on timeout. This is the single safe bridge
-     * from transport threads into game state.
+     * up to {@code timeoutMs}. Returns null on timeout. A {@link dev.despotes.common.protocol.ProtocolError}
+     * thrown by the task is rethrown to the caller (not swallowed) so query routing can
+     * surface the structured error. This is the single safe bridge from transport threads
+     * into game state.
      */
     <T> T awaitOnClientThread(Supplier<T> task, long timeoutMs);
+
+    /**
+     * v26.13: true once the client has begun closing (game loop exit requested).
+     * The core calls {@link dev.despotes.common.Despotes#shutdown()} from the tick hook
+     * when this fires, stopping the transports *before* Minecraft's post-main shutdown
+     * watchdog kills the process (the JDK httpserver's non-daemon dispatcher thread
+     * otherwise trips that watchdog and produces a cosmetic crash report).
+     */
+    default boolean shutdownRequested() {
+        return false;
+    }
 
     /**
      * Begin an asynchronous framebuffer capture. The submission happens on the client

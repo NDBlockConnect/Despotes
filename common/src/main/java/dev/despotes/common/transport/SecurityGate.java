@@ -244,10 +244,17 @@ public final class SecurityGate {
             qp.addProperty("type", queryType);
             // routeBatch runs on an HTTP worker; queries must hop to the client thread
             // just like ordinary batch queries do before reading Minecraft state.
-            Result qr = despotes.platform().awaitOnClientThread(() -> {
-                ActionContext qctx = new ActionContext(despotes, null, "batch", "batch");
-                return Actions.execute(qctx, qp);
-            }, despotes.config().http.screenshotTimeoutMs);
+            Result qr;
+            try {
+                qr = despotes.platform().awaitOnClientThread(() -> {
+                    ActionContext qctx = new ActionContext(despotes, null, "batch", "batch");
+                    return Actions.execute(qctx, qp);
+                }, despotes.config().http.screenshotTimeoutMs);
+            } catch (ProtocolError e) {
+                // v26.13: structured errors (e.g. NOT_IN_GAME) mean the condition cannot
+                // match — take the else branch rather than failing the whole batch.
+                qr = null;
+            }
             if (qr == null) {
                 matched = false;
                 return c.has("else") ? c.getAsJsonArray("else") : null;
