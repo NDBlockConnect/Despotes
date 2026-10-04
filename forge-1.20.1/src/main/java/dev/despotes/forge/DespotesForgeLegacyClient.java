@@ -2,8 +2,10 @@ package dev.despotes.forge;
 
 import com.google.gson.JsonObject;
 import dev.despotes.common.Despotes;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -15,7 +17,18 @@ public final class DespotesForgeLegacyClient {
 
     private static volatile boolean booted;
 
+    /** v26.13-Alpha.1: HUD visibility toggle (default F8, rebindable in Controls). */
+    private static KeyMapping toggleHudKey;
+
     public DespotesForgeLegacyClient(IEventBus modBus) {
+        // v26.13-Alpha.1: HUD toggle key bind on the mod event bus. The default key is
+        // F8; after the first launch the vanilla Controls screen owns the binding.
+        modBus.addListener((RegisterKeyMappingsEvent e) -> {
+            toggleHudKey = new KeyMapping("key.despotes.toggle_hud",
+                    org.lwjgl.glfw.GLFW.GLFW_KEY_F8, "key.categories.despotes");
+            e.register(toggleHudKey);
+        });
+
         modBus.addListener((RenderGuiOverlayEvent.Post e) -> {
             Despotes d = bootOnce();
             if (d != null) {
@@ -30,6 +43,11 @@ public final class DespotesForgeLegacyClient {
             Despotes d = bootOnce();
             if (d != null) {
                 d.clientTick();
+                if (toggleHudKey != null) {
+                    while (toggleHudKey.consumeClick()) {
+                        d.overlay().toggle();
+                    }
+                }
             }
         });
 

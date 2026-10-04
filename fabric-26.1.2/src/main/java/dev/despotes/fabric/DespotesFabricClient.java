@@ -1,18 +1,31 @@
 package dev.despotes.fabric;
 
 import com.google.gson.JsonObject;
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.despotes.common.Despotes;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.minecraft.client.KeyMapping;
 
 /** Fabric client entrypoint: boots Despotes and wires the client tick hook. */
 public final class DespotesFabricClient implements ClientModInitializer {
 
+    /** v26.13-Alpha.1: HUD visibility toggle; default from despotes.json, rebindable in Controls. */
+    private static KeyMapping toggleHudKey;
+
     @Override
     public void onInitializeClient() {
         Despotes despotes = Despotes.boot(new FabricPlatform());
-        ClientTickEvents.END_CLIENT_TICK.register(client -> despotes.clientTick());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            despotes.clientTick();
+            if (toggleHudKey != null) {
+                while (toggleHudKey.consumeClick()) {
+                    despotes.overlay().toggle();
+                }
+            }
+        });
 
         // v26.11 fix: message events MUST be registered before any registration that
         // could throw — a throw here previously left the event bus silent for the whole
@@ -32,6 +45,18 @@ public final class DespotesFabricClient implements ClientModInitializer {
             despotes.eventBus().publish(overlay ? "overlay" : "system", payload);
         });
 
+        // v26.13-Alpha.1: HUD toggle key bind — registered after the message events so a
+        // keybind failure can never leave the event bus silent (v26.11 lesson).
+        try {
+            toggleHudKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                    "key.despotes.toggle_hud",
+                    resolveDefaultKey(despotes),
+                    KeyMapping.Category.register(
+                            net.minecraft.resources.Identifier.parse("despotes:control"))));
+        } catch (Throwable t) {
+            despotes.platform().log("[Despotes] HUD toggle key bind registration failed: " + t);
+        }
+
         // Overlay rendering via the fabric-api HudElementRegistry (no Hud mixin on 26.1).
         // Defensive: an HUD-hook failure must never take down the control channel.
         try {
@@ -44,5 +69,18 @@ public final class DespotesFabricClient implements ClientModInitializer {
         } catch (Throwable t) {
             despotes.platform().log("[Despotes] HUD overlay registration failed (overlay disabled): " + t);
         }
+    }
+
+    /** v26.13-Alpha.1: resolves the configured default key, falling back to F8. */
+    private static int resolveDefaultKey(Despotes despotes) {
+        try {
+            InputConstants.Key key = InputConstants.getKey(despotes.config().visualization.toggleKey);
+            if (key != null && key != InputConstants.UNKNOWN) {
+                return key.getValue();
+            }
+        } catch (Throwable t) {
+            despotes.platform().log("[Despotes] invalid visualization.toggleKey; falling back to F8");
+        }
+        return org.lwjgl.glfw.GLFW.GLFW_KEY_F8;
     }
 }
