@@ -3,6 +3,8 @@
 .gradle-hermetic/
 build/
 out/
+# Local backups / verification evidence (not part of the source tree)
+.backups/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

@@ -2,11 +2,14 @@ package dev.despotes.neoforge;
 
 import com.google.gson.JsonObject;
 import dev.despotes.common.Despotes;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -23,11 +26,30 @@ public final class DespotesNeoForgeClient {
 
     private static volatile boolean booted;
 
-    public DespotesNeoForgeClient() {
+    /** v26.13-Alpha.1: HUD visibility toggle (default F8, rebindable in Controls). */
+    private static KeyMapping toggleHudKey;
+
+    public DespotesNeoForgeClient(IEventBus modEventBus) {
+        // v26.13-Alpha.1: HUD toggle key bind on the mod event bus. The default key is
+        // F8; after the first launch the vanilla Controls screen owns the binding.
+        modEventBus.addListener((RegisterKeyMappingsEvent e) -> {
+            KeyMapping.Category hudCategory = new KeyMapping.Category(
+                    net.minecraft.resources.Identifier.parse("despotes:control"));
+            e.registerCategory(hudCategory);
+            toggleHudKey = new KeyMapping("key.despotes.toggle_hud",
+                    org.lwjgl.glfw.GLFW.GLFW_KEY_F8, hudCategory);
+            e.register(toggleHudKey);
+        });
+
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post e) -> {
             Despotes d = bootOnce();
             if (d != null) {
                 d.clientTick();
+                if (toggleHudKey != null) {
+                    while (toggleHudKey.consumeClick()) {
+                        d.overlay().toggle();
+                    }
+                }
             }
         });
         NeoForge.EVENT_BUS.addListener((RenderGuiEvent.Post e) -> {
