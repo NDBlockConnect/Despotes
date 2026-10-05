@@ -303,19 +303,24 @@ public final class NativePlatform implements IGamePlatform {
     @Override
     public void beginCapture(ScreenshotOptions options, java.util.function.Consumer<ShotHandle> done) {
         Minecraft mc = Minecraft.getInstance();
-        try {
-            NativeImage img = net.minecraft.client.Screenshot.takeScreenshot(
-                    mc.getMainRenderTarget());
-            Path tmp = Files.createTempFile("despotes-shot-", ".png");
-            img.writeToFile(tmp);
-            byte[] bytes = Files.readAllBytes(tmp);
-            Files.deleteIfExists(tmp);
-            done.accept(new NativeShotHandle(img.getWidth(), img.getHeight(), "png", bytes));
-            img.close();
-        } catch (Exception e) {
-            log("[Despotes] capture failed: " + e.getMessage());
-            done.accept(null);
-        }
+        // v26.13-Alpha.2: schedule the capture on the client (render) thread.
+        // MC 1.21.9+ asserts RenderSystem thread affinity and rejects worker-thread
+        // submissions.
+        mc.execute(() -> {
+            try {
+                NativeImage img = net.minecraft.client.Screenshot.takeScreenshot(
+                        mc.getMainRenderTarget());
+                Path tmp = Files.createTempFile("despotes-shot-", ".png");
+                img.writeToFile(tmp);
+                byte[] bytes = Files.readAllBytes(tmp);
+                Files.deleteIfExists(tmp);
+                done.accept(new NativeShotHandle(img.getWidth(), img.getHeight(), "png", bytes));
+                img.close();
+            } catch (Exception e) {
+                log("[Despotes] capture failed: " + e.getMessage());
+                done.accept(null);
+            }
+        });
     }
 
     // ---- mouse capture (focus-safe) ----

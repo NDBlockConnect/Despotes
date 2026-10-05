@@ -325,30 +325,35 @@ public final class NeoForgePlatform implements IGamePlatform {
     @Override
     public void beginCapture(ScreenshotOptions options, java.util.function.Consumer<ShotHandle> done) {
         Minecraft mc = Minecraft.getInstance();
-        try {
-            java.util.concurrent.atomic.AtomicBoolean settled =
-                    new java.util.concurrent.atomic.AtomicBoolean(false);
-            net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(), img -> {
-                if (!settled.compareAndSet(false, true)) {
-                    return;
-                }
-                try {
-                    Path tmp = Files.createTempFile("despotes-shot-", ".png");
-                    img.writeToFile(tmp);
-                    byte[] bytes = Files.readAllBytes(tmp);
-                    Files.deleteIfExists(tmp);
-//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
-                    done.accept(new NeoForgeShotHandle(img.getWidth(), img.getHeight(), "png", bytes));
-                    img.close();
-                } catch (Exception e) {
-                    log("[Despotes] capture encode failed: " + e.getMessage());
-                    done.accept(null);
-                }
-            });
-        } catch (Exception e) {
-            log("[Despotes] capture failed: " + e.getMessage());
-            done.accept(null);
-        }
+        // v26.13-Alpha.2: schedule the capture on the client (render) thread.
+        // MC 1.21.9+ asserts RenderSystem thread affinity and rejects worker-thread
+        // submissions.
+        mc.execute(() -> {
+            try {
+                java.util.concurrent.atomic.AtomicBoolean settled =
+                        new java.util.concurrent.atomic.AtomicBoolean(false);
+                net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(), img -> {
+                    if (!settled.compareAndSet(false, true)) {
+                        return;
+                    }
+                    try {
+                        Path tmp = Files.createTempFile("despotes-shot-", ".png");
+                        img.writeToFile(tmp);
+                        byte[] bytes = Files.readAllBytes(tmp);
+                        Files.deleteIfExists(tmp);
+    //GitHub@NDBlockConnect | BlockConnect@StarsailsClover
+                        done.accept(new NeoForgeShotHandle(img.getWidth(), img.getHeight(), "png", bytes));
+                        img.close();
+                    } catch (Exception e) {
+                        log("[Despotes] capture encode failed: " + e.getMessage());
+                        done.accept(null);
+                    }
+                });
+            } catch (Exception e) {
+                log("[Despotes] capture failed: " + e.getMessage());
+                done.accept(null);
+            }
+        });
     }
 
     @Override
