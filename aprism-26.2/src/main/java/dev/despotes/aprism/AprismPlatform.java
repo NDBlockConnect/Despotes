@@ -327,56 +327,61 @@ public final class AprismPlatform implements IGamePlatform {
     @Override
     public void beginCapture(ScreenshotOptions options, java.util.function.Consumer<ShotHandle> done) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.gameRenderer == null) {
-            done.accept(null);
-            return;
-        }
-        try {
-            var target = mc.gameRenderer.mainRenderTarget();
-            int width = target.width;
-            int height = target.height;
-            var texture = target.getColorTexture();
-            if (texture == null) {
+        // v26.13-Alpha.2: schedule the capture on the client (render) thread.
+        // MC 1.21.9+ asserts RenderSystem thread affinity and rejects worker-thread
+        // submissions.
+        mc.execute(() -> {
+            if (mc.gameRenderer == null) {
                 done.accept(null);
-//GitHub@NDBlockConnect | BlockConnect@StarsailsClover
                 return;
             }
-            var device = com.mojang.blaze3d.systems.RenderSystem.getDevice();
-            int blockSize = texture.getFormat().blockSize();
-            var buffer = device.createBuffer(() -> "despotes-screenshot",
-                    com.mojang.blaze3d.buffers.GpuBuffer.USAGE_MAP_READ,
-                    (long) width * height * blockSize);
-            var encoder = device.createCommandEncoder();
-            encoder.copyTextureToBuffer(texture, buffer, 0L, () -> {
-                // GPU copy completed — read back and encode.
-                try (var view = buffer.map(true, false)) {
-                    var image = new com.mojang.blaze3d.platform.NativeImage(width, height, false);
-                    var data = view.data();
-                    for (int row = 0; row < height; row++) {
-                        int base = row * width * blockSize;
-                        for (int col = 0; col < width; col++) {
-                            int pixel = data.getInt(base + col * blockSize);
-                            image.setPixelABGR(col, height - 1 - row, pixel | 0xFF000000);
-                        }
-                    }
-                    Path tmp = Files.createTempFile("despotes-shot-", ".png");
-                    image.writeToFile(tmp);
-                    byte[] bytes = Files.readAllBytes(tmp);
-                    Files.deleteIfExists(tmp);
-                    image.close();
-                    done.accept(new AprismShotHandle(width, height, "png", bytes));
-                } catch (Exception e) {
-                    log("[Despotes] capture encode failed: " + e.getMessage());
+            try {
+                var target = mc.gameRenderer.mainRenderTarget();
+                int width = target.width;
+                int height = target.height;
+                var texture = target.getColorTexture();
+                if (texture == null) {
                     done.accept(null);
-                } finally {
-                    buffer.close();
+    //GitHub@NDBlockConnect | BlockConnect@StarsailsClover
+                    return;
                 }
-            }, 0);
-            encoder.submit();
-        } catch (Exception e) {
-            log("[Despotes] capture submit failed: " + e.getMessage());
-            done.accept(null);
-        }
+                var device = com.mojang.blaze3d.systems.RenderSystem.getDevice();
+                int blockSize = texture.getFormat().blockSize();
+                var buffer = device.createBuffer(() -> "despotes-screenshot",
+                        com.mojang.blaze3d.buffers.GpuBuffer.USAGE_MAP_READ,
+                        (long) width * height * blockSize);
+                var encoder = device.createCommandEncoder();
+                encoder.copyTextureToBuffer(texture, buffer, 0L, () -> {
+                    // GPU copy completed — read back and encode.
+                    try (var view = buffer.map(true, false)) {
+                        var image = new com.mojang.blaze3d.platform.NativeImage(width, height, false);
+                        var data = view.data();
+                        for (int row = 0; row < height; row++) {
+                            int base = row * width * blockSize;
+                            for (int col = 0; col < width; col++) {
+                                int pixel = data.getInt(base + col * blockSize);
+                                image.setPixelABGR(col, height - 1 - row, pixel | 0xFF000000);
+                            }
+                        }
+                        Path tmp = Files.createTempFile("despotes-shot-", ".png");
+                        image.writeToFile(tmp);
+                        byte[] bytes = Files.readAllBytes(tmp);
+                        Files.deleteIfExists(tmp);
+                        image.close();
+                        done.accept(new AprismShotHandle(width, height, "png", bytes));
+                    } catch (Exception e) {
+                        log("[Despotes] capture encode failed: " + e.getMessage());
+                        done.accept(null);
+                    } finally {
+                        buffer.close();
+                    }
+                }, 0);
+                encoder.submit();
+            } catch (Exception e) {
+                log("[Despotes] capture submit failed: " + e.getMessage());
+                done.accept(null);
+            }
+        });
     }
 
     @Override
